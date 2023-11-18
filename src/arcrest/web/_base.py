@@ -40,7 +40,7 @@ class BaseOperation(object):
         if self._error is None:
             try:
                 #__init is renamed to the class with an _
-                init = getattr(self, "_" + self.__class__.__name__ + "__init", None)
+                init = getattr(self, f"_{self.__class__.__name__}__init", None)
                 if init is not None and callable(init):
                     init()
             except Exception as e:
@@ -49,10 +49,7 @@ class BaseOperation(object):
         return self._error
     #----------------------------------------------------------------------
     def hasError(self):
-        if self.error is None:
-            return False
-        else:
-            return True
+        return self.error is not None
 ########################################################################
 class RedirectHandler(request.HTTPRedirectHandler):
     def http_error_301(self, req, fp, code, msg, headers):
@@ -107,10 +104,10 @@ class MultiPartForm(object):
                               filename=fileName,#os.path.basename(v),
                               filePath=filePath,#,v
                               mimetype=None)
-        self.boundary = "-%s" % email.generator._make_boundary()
+        self.boundary = f"-{email.generator._make_boundary()}"
     #----------------------------------------------------------------------
     def get_content_type(self):
-        return 'multipart/form-data; boundary=%s' % self.boundary
+        return f'multipart/form-data; boundary={self.boundary}'
     #----------------------------------------------------------------------
     def add_field(self, name, value):
         """Add a simple field to the form data."""
@@ -145,7 +142,7 @@ class MultiPartForm(object):
         buf = StringIO()
         for (key, value) in self.form_fields:
             buf.write('--%s\r\n' % boundary)
-            buf.write('Content-Disposition: form-data; name="%s"' % key)
+            buf.write(f'Content-Disposition: form-data; name="{key}"')
             buf.write('\r\n\r\n%s\r\n' % value)
         for (key, filename, mimetype, filepath) in self.files:
             if os.path.isfile(filepath):
@@ -160,7 +157,7 @@ class MultiPartForm(object):
                 with open(filepath, "rb") as f:
                     shutil.copyfileobj(f, buf)
                 buf.write('\r\n')
-        buf.write('--' + boundary + '--\r\n\r\n')
+        buf.write(f'--{boundary}' + '--\r\n\r\n')
         buf = buf.getvalue()
         self.form_data = buf
     #----------------------------------------------------------------------
@@ -189,7 +186,7 @@ class MultiPartForm(object):
                 with open(filepath, "rb") as f:
                     shutil.copyfileobj(f, buf)
                 textwriter.write('\r\n')
-        textwriter.write('--{}--\r\n\r\n'.format(boundary))
+        textwriter.write(f'--{boundary}--\r\n\r\n')
         self.form_data = buf.getvalue()
 ########################################################################
 class BaseWebOperations(BaseOperation):
@@ -259,7 +256,7 @@ class BaseWebOperations(BaseOperation):
                 return p.findall(contentDisposition.strip().replace('"', ''))[0][0]
             elif os.path.basename(url).find('.') > -1:
                 return os.path.basename(url)
-        return "%s.%s" % (uuid.uuid4().get_hex(), ext)
+        return f"{uuid.uuid4().get_hex()}.{ext}"
     #----------------------------------------------------------------------
     def _processHandler(self, securityHandler, param_dict):
         """proceses the handler and returns the cookiejar"""
@@ -267,8 +264,7 @@ class BaseWebOperations(BaseOperation):
         handler = None
         if securityHandler is None:
             cj = cookiejar.CookieJar()
-        elif securityHandler.method.lower() == "token" or \
-             securityHandler.method.lower() == "oauth":
+        elif securityHandler.method.lower() in ["token", "oauth"]:
             param_dict['token'] = securityHandler.token
             if hasattr(securityHandler, 'cookiejar'):
                 cj = securityHandler.cookiejar
@@ -293,9 +289,9 @@ class BaseWebOperations(BaseOperation):
         contentLength = resp.headers.get('content-length')
         if maintype.lower() in ('image',
                                 'application/x-zip-compressed') or \
-           contentType == 'application/x-zip-compressed' or \
-           (contentDisposition is not None and \
-            contentDisposition.lower().find('attachment;') > -1):
+               contentType == 'application/x-zip-compressed' or \
+               (contentDisposition is not None and \
+                contentDisposition.lower().find('attachment;') > -1):
             fname = self._get_file_name(
                 contentDisposition=contentDisposition,
                 url=resp.geturl())
@@ -315,11 +311,7 @@ class BaseWebOperations(BaseOperation):
         else:
             read = ""
             for data in self._chunk(response=resp, size=4096):
-                if self.PY3 == True:
-                    read += data.decode('utf-8')
-                else:
-                    read += data
-
+                read += data.decode('utf-8') if self.PY3 == True else data
                 del data
             try:
                 return json.loads(read.strip())
@@ -330,15 +322,14 @@ class BaseWebOperations(BaseOperation):
     def _make_boundary(self):
         """ creates a boundary for multipart post (form post)"""
         if self.PY2:
-            return '-===============%s==' % uuid.uuid4().get_hex()
+            return f'-==============={uuid.uuid4().get_hex()}=='
         elif self.PY3:
-            return '-===============%s==' % uuid.uuid4().hex
+            return f'-==============={uuid.uuid4().hex}=='
         else:
             from random import choice
-            digits = "0123456789"
             letters = "abcdefghijklmnopqrstuvwxyz"
-            return '-===============%s==' % ''.join(choice(letters + digits) \
-                                                   for i in range(15))
+            digits = "0123456789"
+            return f"-==============={''.join(choice(letters + digits) for _ in range(15))}=="
     #----------------------------------------------------------------------
     def _get_content_type(self, filename):
         return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
@@ -365,9 +356,10 @@ class BaseWebOperations(BaseOperation):
                 del data
         else:
             while True:
-                chunk = response.read(size)
-                if not chunk: break
-                yield chunk
+                if chunk := response.read(size):
+                    yield chunk
+                else:
+                    break
     #----------------------------------------------------------------------
     def _post(self, url,
               param_dict=None,
@@ -424,9 +416,11 @@ class BaseWebOperations(BaseOperation):
             additional_headers = {}
         if custom_handlers is None:
             custom_handlers = []
-        if self._verify == False and \
-           sys.version_info[0:3] >= (2, 7, 9) and \
-            hasattr(ssl,'create_default_context'):
+        if (
+            self._verify == False
+            and sys.version_info[:3] >= (2, 7, 9)
+            and hasattr(ssl, 'create_default_context')
+        ):
             ctx = ssl.create_default_context()
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
@@ -454,26 +448,24 @@ class BaseWebOperations(BaseOperation):
         if cj is not None:
             handlers.append(request.HTTPCookieProcessor(cj))
         if isinstance(custom_handlers, list) and \
-           len(custom_handlers) > 0:
-            for h in custom_handlers:
-                handlers.append(h)
-        if compress:
-            headers['Accept-Encoding'] = 'gzip'
-        else:
-            headers['Accept-Encoding'] = ''
+               len(custom_handlers) > 0:
+            handlers.extend(iter(custom_handlers))
+        headers['Accept-Encoding'] = 'gzip' if compress else ''
         for k,v in additional_headers.items():
             headers[k] = v
             del k,v
         hasContext = 'context' in self._has_context(request.urlopen)
-        if self._verify == False and \
-           sys.version_info[0:3] >= (2, 7, 9) and \
-            hasattr(ssl,'create_default_context'):
+        if (
+            self._verify == False
+            and sys.version_info[:3] >= (2, 7, 9)
+            and hasattr(ssl, 'create_default_context')
+        ):
             ctx = ssl.create_default_context()
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
 
         opener = request.build_opener(*handlers)
-        opener.addheaders = [(k,v) for k,v in headers.items()]
+        opener.addheaders = list(headers.items())
         request.install_opener(opener)
         if force_form_post == False:
             data = urlencode(param_dict)
@@ -499,7 +491,7 @@ class BaseWebOperations(BaseOperation):
             req.add_header('Content-length', len(body))
             req.data = body
             if 'context' in self._has_context(request.urlopen) and \
-               self._verify == False:
+                   self._verify == False:
                 resp = request.urlopen(req, context=ctx)
             else:
                 resp = request.urlopen(req)
@@ -510,7 +502,7 @@ class BaseWebOperations(BaseOperation):
                                               out_folder=out_folder)
         if isinstance(return_value, dict):
             if "error" in return_value and \
-               'message' in return_value['error']:
+                   'message' in return_value['error']:
                 if return_value['error']['message'].lower() == 'request not made over ssl':
                     if url.startswith('http://'):
                         url = url.replace('http://', 'https://')
@@ -525,9 +517,6 @@ class BaseWebOperations(BaseOperation):
                                           compress,
                                           out_folder,
                                           file_name)
-            return return_value
-        else:
-            return return_value
         return return_value
     #----------------------------------------------------------------------
     def _asString(self, value):

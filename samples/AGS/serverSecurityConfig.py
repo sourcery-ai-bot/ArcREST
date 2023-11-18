@@ -6,11 +6,13 @@ if __name__ == "__main__":
     password = ""
     url = ""
 
-    sh = AGSTokenSecurityHandler(username=username,
-                                 password=password,
-                                 token_url=url + '/tokens/',
-                                 proxy_url=None,
-                                 proxy_port=None)
+    sh = AGSTokenSecurityHandler(
+        username=username,
+        password=password,
+        token_url=f'{url}/tokens/',
+        proxy_url=None,
+        proxy_port=None,
+    )
 
     ags = AGSAdministration(url=url,
                             securityHandler=sh,

@@ -41,7 +41,7 @@ class hydrology(abstract.BaseAGOLClass):
             self._url = "https://www.arcgis.com/sharing/rest"
         else:
             if url.find("/sharing/rest") == -1:
-                url = url + "/sharing/rest"
+                url = f"{url}/sharing/rest"
             self._url = url
         self._securityHandler = securityHandler
         self._proxy_url = proxy_url
@@ -50,11 +50,11 @@ class hydrology(abstract.BaseAGOLClass):
     #----------------------------------------------------------------------
     def __init_url(self):
         """loads the information into the class"""
-        portals_self_url = "{}/portals/self".format(self._url)
+        portals_self_url = f"{self._url}/portals/self"
         params = {
             "f" :"json"
         }
-        if not self._securityHandler is None:
+        if self._securityHandler is not None:
             params['token'] = self._securityHandler.token
         res = self._get(url=portals_self_url,
                            param_dict=params,

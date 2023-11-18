@@ -47,7 +47,7 @@ class Data(BaseAGSServer):
         params = {
             "f" : "json"
         }
-        dURL = self._url + "/config"
+        dURL = f"{self._url}/config"
         return self._get(url=dURL, param_dict=params,
                             securityHandler=self._securityHandler,
                             proxy_url=self._proxy_url,
@@ -68,7 +68,7 @@ class Data(BaseAGSServer):
             "f" : "json",
             "datastoreConfig" : datastoreConfig
         }
-        url = self._url + "/config/update"
+        url = f"{self._url}/config/update"
         return self._post(url=url, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -85,7 +85,7 @@ class Data(BaseAGSServer):
            Output:
               JSON message as dictionary
         """
-        cURL = self._url + "/computeTotalRefCount"
+        cURL = f"{self._url}/computeTotalRefCount"
         params = {
             "f" : "json",
             "path" : path
@@ -121,7 +121,7 @@ class Data(BaseAGSServer):
             params['type'] = type
         if id is not None:
             params['id'] = id
-        fURL = self._url + "/findItems"
+        fURL = f"{self._url}/findItems"
         return self._post(url=fURL, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -140,7 +140,7 @@ class Data(BaseAGSServer):
             "item" : item,
             "f" : "json"
         }
-        rURL = self._url + "/registerItem"
+        rURL = f"{self._url}/registerItem"
         return self._post(url=rURL, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -151,7 +151,7 @@ class Data(BaseAGSServer):
         """ This resource lists data items that are the root of all other
             data items in the data store.
         """
-        url = self._url + "/items"
+        url = f"{self._url}/items"
         params = {
             "f" : "json"
         }
@@ -166,7 +166,7 @@ class Data(BaseAGSServer):
         """ validates all the items in the datastore """
         params = {
         "f" : "json"}
-        url = self._url + "/validateAllDataItems"
+        url = f"{self._url}/validateAllDataItems"
         return self._post(url=url, param_dict=params,
                             securityHandler=self._securityHandler,
                             proxy_url=self._proxy_url,
@@ -192,7 +192,7 @@ class Data(BaseAGSServer):
             "f" : "json",
             "item" : item
         }
-        url = self._url + "/validateDataItem"
+        url = f"{self._url}/validateDataItem"
         return self._post(url=url,
                              param_dict=params,
                              securityHandler=self._securityHandler,
@@ -205,7 +205,7 @@ class Data(BaseAGSServer):
         existing primary machine is downgraded to a standby machine.
 
         """
-        url = self._url + "/items/enterpriseDatabases/%s/machines/%s/makePrimary" % (dataStoreName, machineName)
+        url = f"{self._url}/items/enterpriseDatabases/{dataStoreName}/machines/{machineName}/makePrimary"
         params = {
             "f" : "json"
         }
@@ -224,7 +224,7 @@ class Data(BaseAGSServer):
            dataStoreItemName - name of the data store item
            machineName - name of the machine to remove
         """
-        url = self._url + "/items/enterpriseDatabases/%s/machines/%s/remove" % (dataStoreItemName, machineName)
+        url = f"{self._url}/items/enterpriseDatabases/{dataStoreItemName}/machines/{machineName}/remove"
         params = {
             "f" : "json"
         }
@@ -241,7 +241,7 @@ class Data(BaseAGSServer):
            dataStoreItemName - name of the item to start
            machineName - name of the machine to start on
         """
-        url = self._url + "/items/enterpriseDatabases/%s/machines/%s/start" % (dataStoreItemName, machineName)
+        url = f"{self._url}/items/enterpriseDatabases/{dataStoreItemName}/machines/{machineName}/start"
         params = {
             "f": "json"
         }
@@ -258,7 +258,7 @@ class Data(BaseAGSServer):
            dataStoreItemName - name of the item to stop
            machineName - name of the machine to stop on
         """
-        url = self._url + "/items/enterpriseDatabases/%s/machines/%s/stop" % (dataStoreItemName, machineName)
+        url = f"{self._url}/items/enterpriseDatabases/{dataStoreItemName}/machines/{machineName}/stop"
         params = {
             "f": "json"
         }
@@ -279,7 +279,7 @@ class Data(BaseAGSServer):
            path = r"/fileShares/folder_share"
            print data.unregisterDataItem(path)
         """
-        url = self._url + "/unregisterItem"
+        url = f"{self._url}/unregisterItem"
         params = {
             "f" : "json",
             "itempath" : path,
@@ -299,7 +299,7 @@ class Data(BaseAGSServer):
            dataStoreName - name of the datastore
            machineName - name of the machine
         """
-        url = self._url + "/items/enterpriseDatabases/%s/machines/%s/validate" % (dataStoreName, machineName)
+        url = f"{self._url}/items/enterpriseDatabases/{dataStoreName}/machines/{machineName}/validate"
         params = {
             "f" : "json"
         }

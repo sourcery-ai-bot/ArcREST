@@ -29,10 +29,7 @@ class Clusters(BaseAGSServer):
                  proxy_port=None, initialize=False):
         """Constructor"""
         self._securityHandler = securityHandler
-        if url.lower().endswith("/clusters"):
-            self._url = url
-        else:
-            self._url = url + "/clusters"
+        self._url = url if url.lower().endswith("/clusters") else f"{url}/clusters"
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
         if initialize:
@@ -51,10 +48,10 @@ class Clusters(BaseAGSServer):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                     if not attr.startswith('__') and \
-                    not attr.startswith('_')]
+                        not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in Clusters.")
             del k
@@ -85,7 +82,7 @@ class Clusters(BaseAGSServer):
                             parameter is missing, a suitable default will
                             be used.
         """
-        url = self._url + "/create"
+        url = f"{self._url}/create"
         params = {
             "f" : "json",
             "clusterName" : clusterName,
@@ -105,7 +102,7 @@ class Clusters(BaseAGSServer):
         The list would be empty if all registered server machines already
         participate in some cluster.
         """
-        url = self._url + "/getAvailableMachines"
+        url = f"{self._url}/getAvailableMachines"
         params = {
             "f" : "json"
         }
@@ -165,10 +162,10 @@ class Cluster(BaseAGSServer):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                     if not attr.startswith('__') and \
-                    not attr.startswith('_')]
+                        not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in Clusters.")
             del k
@@ -187,7 +184,7 @@ class Cluster(BaseAGSServer):
             self.__init()
             Cs = []
             for c in self._clusters:
-                url = self._url + "/%s" % c['clusterName']
+                url = f"{self._url}/{c['clusterName']}"
                 Cs.append(Cluster(url=url,
                                   securityHandler=self._securityHandler,
                                   proxy_url=self._proxy_url,
@@ -239,7 +236,7 @@ class Cluster(BaseAGSServer):
         params = {
             "f" : "json"
         }
-        url = self._url + "/start"
+        url = f"{self._url}/start"
         return self._post(url=url,
                              param_dict=params,
                              securityHandler=self._securityHandler,
@@ -256,7 +253,7 @@ class Cluster(BaseAGSServer):
         params = {
             "f" : "json"
         }
-        url = self._url + "/stop"
+        url = f"{self._url}/stop"
         return self._post(url=url,
                              param_dict=params,
                              securityHandler=self._securityHandler,
@@ -273,7 +270,7 @@ class Cluster(BaseAGSServer):
         params = {
             "f" : "json"
         }
-        url = self._url + "/delete"
+        url = f"{self._url}/delete"
         return self._post(url=url,
                              param_dict=params,
                              securityHandler=self._securityHandler,
@@ -291,7 +288,7 @@ class Cluster(BaseAGSServer):
         params = {
             "f" : "json"
         }
-        url = self._url + "/services"
+        url = f"{self._url}/services"
         return self._post(url=url,
                              param_dict=params,
                              securityHandler=self._securityHandler,
@@ -307,7 +304,7 @@ class Cluster(BaseAGSServer):
         The list of server machines participating in a cluster is dynamic
         as machines can be added or removed.
         """
-        url = self._url + "/machines"
+        url = f"{self._url}/machines"
         params = {
             "f" : "json"
         }
@@ -328,7 +325,7 @@ class Cluster(BaseAGSServer):
            machineNames - A comma-separated list of machine names. The
            machines must be registered prior to completing this operation.
         """
-        url = self._url + "/machines/add"
+        url = f"{self._url}/machines/add"
         params = {
             "f" : "json",
             "machineNames" : machineNames
@@ -349,7 +346,7 @@ class Cluster(BaseAGSServer):
            machineNames - A comma-separated list of machine names. The
            machines must be registered prior to completing this operation.
         """
-        url = self._url + "/machines/remove"
+        url = f"{self._url}/machines/remove"
         params = {
             "f" : "json",
             "machineNames" : machineNames
@@ -365,10 +362,9 @@ class Cluster(BaseAGSServer):
         Updates the Cluster Protocol. This will cause the cluster to be
         restarted with updated protocol configuration.
         """
-        if isinstance(clusterProtocolObj, ClusterProtocol): pass
-        else:
+        if not isinstance(clusterProtocolObj, ClusterProtocol):
             raise AttributeError("Invalid Input, must be a ClusterProtocal Object")
-        url = self._url + "/editProtocol"
+        url = f"{self._url}/editProtocol"
         params = {
             "f" : "json",
             "tcpClusterPort" : str(clusterProtocolObj.value['tcpClusterPort'])

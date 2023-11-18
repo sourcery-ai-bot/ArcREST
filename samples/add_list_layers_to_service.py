@@ -279,28 +279,27 @@ def syncLayer(fst, fs, layer, layerName, displayName, lowerCaseFieldNames, showF
 
     outputPrinter (message="\t\tAttemping to sync %s to %s" % (displayName,layerName))
     fl = fst.GetLayerFromFeatureService(fs=fs,layerName=layerName,returnURLOnly=False)
-    if not fl is None:
+    if fl is not None:
         results = fl.addFeatures(fc=layer,lowerCaseFieldNames=lowerCaseFieldNames)
         if str(showFullResponse).lower() =='true':
             outputPrinter(message="\t\tResponse:  %s" % results)
         if 'error' in results:
             outputPrinter(message="\t\tError in response from server:  %s" % results['error'],typeOfMessage='error')
             arcpy.SetParameterAsText(10, "false")
+        elif results['addResults'] is None:
+            outputPrinter (message="\t\t0 features added to %s /n result info %s" % (layerName,str(results)))
         else:
-            if results['addResults'] is not None:
-                featSucces = 0
-                for result in results['addResults']:
-                    if 'success' in result:
-                        if result['success'] == False:
-                            if 'error' in result:
+            featSucces = 0
+            for result in results['addResults']:
+                if 'success' in result:
+                    if result['success'] == False:
+                        if 'error' in result:
 
-                                outputPrinter (message="\t\t\tError info: %s" % (result['error']) )
-                        else:
-                            featSucces = featSucces + 1
+                            outputPrinter (message="\t\t\tError info: %s" % (result['error']) )
+                    else:
+                        featSucces = featSucces + 1
 
-                outputPrinter (message="\t\t%s features added to %s" % (featSucces,layerName) )
-            else:
-                outputPrinter (message="\t\t0 features added to %s /n result info %s" % (layerName,str(results)))
+            outputPrinter (message="\t\t%s features added to %s" % (featSucces,layerName) )
     else:
         outputPrinter(message="\t\tLayer %s was not found, please check your credentials and layer name" % layerName,typeOfMessage='error')
         arcpy.SetParameterAsText(10, "false")

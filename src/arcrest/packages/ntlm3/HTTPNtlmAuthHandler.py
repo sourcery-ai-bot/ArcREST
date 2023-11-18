@@ -53,7 +53,7 @@ class AbstractNtlmAuthHandler:
                 # ntlm secures a socket, so we must use the same socket for the complete handshake
             headers = dict(req.headers)
             headers.update(req.unredirected_hdrs)
-            auth = 'NTLM %s' % ntlm.create_NTLM_NEGOTIATE_MESSAGE(user, type1_flags)
+            auth = f'NTLM {ntlm.create_NTLM_NEGOTIATE_MESSAGE(user, type1_flags)}'
             if req.headers.get(self.auth_header, None) == auth:
                 return None
             headers[self.auth_header] = auth
@@ -74,7 +74,7 @@ class AbstractNtlmAuthHandler:
 
             # we must keep the connection because NTLM authenticates the connection, not single requests
             headers["Connection"] = "Keep-Alive"
-            headers = dict((name.title(), val) for name, val in headers.items())
+            headers = {name.title(): val for name, val in headers.items()}
 
             # For some reason, six doesn't do this translation correctly
             # TODO rsanders low - find bug in six & fix it
@@ -107,7 +107,7 @@ class AbstractNtlmAuthHandler:
                                                                      NegotiateFlags)
             headers[self.auth_header] = auth
             headers["Connection"] = "Close"
-            headers = dict((name.title(), val) for name, val in headers.items())
+            headers = {name.title(): val for name, val in headers.items()}
             try:
                 h.request(req.get_method(), selector, req.data, headers)
                 # none of the configured handlers are triggered, for example redirect-responses are not handled!

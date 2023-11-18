@@ -36,7 +36,7 @@ class GeoEnrichment(BaseGeoEnrichment):
                  proxy_url=None,
                  proxy_port=None):
         """Constructor"""
-        if not securityHandler is None:
+        if securityHandler is not None:
             self._referer_url = securityHandler.referer_url
         else:
             raise Exception("A SecurityHandler object is required for this object.")
@@ -155,7 +155,7 @@ class GeoEnrichment(BaseGeoEnrichment):
 
         if code is None:
             raise Exception("Invalid country name.")
-        url = self._base_url + self._url_list_reports + "/%s" % code
+        url = self._base_url + self._url_list_reports + f"/{code}"
         params = {
             "f" : "json",
         }
@@ -263,15 +263,15 @@ class GeoEnrichment(BaseGeoEnrichment):
               parameter to true.
         """
         params = {
-            "f" : "json",
+            "f": "json",
             "outSR": outSR,
-            "inSR" : inSR,
-            "suppressNullValues" : suppressNullValues,
-            "addDerivativeVariables" : addDerivativeVariables,
-            "studyareas" : studyAreas,
-            "forStorage" : forStorage
+            "inSR": inSR,
+            "suppressNullValues": suppressNullValues,
+            "addDerivativeVariables": addDerivativeVariables,
+            "studyareas": studyAreas,
+            "forStorage": forStorage,
+            'returnGeometry': returnGeometry,
         }
-        params['returnGeometry'] = returnGeometry
         if studyAreasOptions is not None:
             params['studyAreasOptions'] = studyAreasOptions
         if dataCollections is not None:
@@ -348,7 +348,7 @@ class GeoEnrichment(BaseGeoEnrichment):
             parameter in a specified spatial reference system.
         """
         url = self._base_url + self._url_create_report
-        if isinstance(studyAreas, list) == False:
+        if not isinstance(studyAreas, list):
             studyAreas = [studyAreas]
         studyAreas = self.__geometryToDict(studyAreas)
 
@@ -357,7 +357,7 @@ class GeoEnrichment(BaseGeoEnrichment):
             "studyAreas" : studyAreas,
             "inSR" : inSR,
         }
-        if not report is None:
+        if report is not None:
             params['report'] = report
         if format is None:
             format = "pdf"
@@ -365,19 +365,20 @@ class GeoEnrichment(BaseGeoEnrichment):
             params['format'] = format.lower()
         else:
             raise AttributeError("Invalid format value.")
-        if not reportFields is None:
+        if reportFields is not None:
             params['reportFields'] = reportFields
-        if not studyAreasOptions is None:
+        if studyAreasOptions is not None:
             params['studyAreasOptions'] = studyAreasOptions
-        if not useData is None:
+        if useData is not None:
             params['useData'] = useData
-        result = self._get(url=url,
-                           param_dict=params,
-                           securityHandler=self._securityHandler,
-                           proxy_url=self._proxy_url,
-                           proxy_port=self._proxy_port,
-                           out_folder=os.path.dirname(out_file_path))
-        return result
+        return self._get(
+            url=url,
+            param_dict=params,
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+            out_folder=os.path.dirname(out_file_path),
+        )
     #----------------------------------------------------------------------
     def dataCollections(self,
                         countryName=None,
@@ -421,21 +422,17 @@ class GeoEnrichment(BaseGeoEnrichment):
         if countryName is None:
             url = self._base_url + self._url_data_collection
         else:
-            url = self._base_url + self._url_data_collection + "/%s" % countryName
+            url = self._base_url + self._url_data_collection + f"/{countryName}"
         params = {
             "f" : "token"
         }
         _addDerivVals = ["percent","index","average","all","*"]
         if addDerivativeVariables in _addDerivVals:
             params['addDerivativeVariables'] = addDerivativeVariables
-        if not outFields is None:
+        if outFields is not None:
             params['outFields'] = outFields
-        if not suppressNullValues is None and \
-           isinstance(suppressNullValues, bool):
-            if suppressNullValues:
-                params['suppressNullValues'] = "true"
-            else:
-                params['suppressNullValues'] = "false"
+        if suppressNullValues is not None and isinstance(suppressNullValues, bool):
+            params['suppressNullValues'] = "true" if suppressNullValues else "false"
         return self._post(url=url,
                              param_dict=params,
                              securityHandler=self._securityHandler,
@@ -535,9 +532,9 @@ class GeoEnrichment(BaseGeoEnrichment):
             "f" : "json",
             "sourceCountry" : sourceCountry
         }
-        if not searchText is None:
+        if searchText is not None:
             params["searchText"] = searchText
-        if not optionalCountryDataset is None:
+        if optionalCountryDataset is not None:
             params['optionalCountryDataset'] = optionalCountryDataset
         return self._post(url=url,
                              param_dict=params,
@@ -667,37 +664,35 @@ class GeoEnrichment(BaseGeoEnrichment):
         params = {
             "f" : "json"
         }
-        if not sourceCountry is None:
+        if sourceCountry is not None:
             params['sourceCountry'] = sourceCountry
-        if not optionalCountryDataset is None:
+        if optionalCountryDataset is not None:
             params['optionalCountryDataset'] = optionalCountryDataset
-        if not geographyLayers is None:
+        if geographyLayers is not None:
             params['geographylayers'] = geographyLayers
-        if not geographyIDs is None:
+        if geographyIDs is not None:
             params['geographyids'] = json.dumps(geographyIDs)
-        if not geographyQuery is None:
+        if geographyQuery is not None:
             params['geographyQuery'] = geographyQuery
-        if not returnSubGeographyLayer is None and \
-           isinstance(returnSubGeographyLayer, bool):
+        if returnSubGeographyLayer is not None and isinstance(
+            returnSubGeographyLayer, bool
+        ):
             params['returnSubGeographyLayer'] = returnSubGeographyLayer
-        if not subGeographyLayer is None:
+        if subGeographyLayer is not None:
             params['subGeographyLayer'] = json.dumps(subGeographyLayer)
-        if not subGeographyQuery is None:
+        if subGeographyQuery is not None:
             params['subGeographyQuery'] = subGeographyQuery
-        if not outSR is None and \
-           isinstance(outSR, int):
+        if outSR is not None and isinstance(outSR, int):
             params['outSR'] = outSR
-        if not returnGeometry is None and \
-           isinstance(returnGeometry, bool):
+        if returnGeometry is not None and isinstance(returnGeometry, bool):
             params['returnGeometry']  = returnGeometry
-        if not returnCentroids is None and \
-           isinstance(returnCentroids, bool):
+        if returnCentroids is not None and isinstance(returnCentroids, bool):
             params['returnCentroids'] = returnCentroids
-        if not generalizationLevel is None and \
-           isinstance(generalizationLevel, int):
+        if generalizationLevel is not None and isinstance(
+            generalizationLevel, int
+        ):
             params['generalizationLevel'] = generalizationLevel
-        if not useFuzzySearch is None and \
-           isinstance(useFuzzySearch, bool):
+        if useFuzzySearch is not None and isinstance(useFuzzySearch, bool):
             params['useFuzzySearch'] = json.dumps(useFuzzySearch)
         if featureLimit is None:
             featureLimit = 1000

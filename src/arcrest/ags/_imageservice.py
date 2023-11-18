@@ -106,10 +106,10 @@ class ImageService(BaseAGSServer):
         self._json = json.dumps(self._json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, v)
+                setattr(self, f"_{k}", v)
             else:
                 print (k, " - attribute not implemented for Image Service.")
     #----------------------------------------------------------------------
@@ -145,8 +145,6 @@ class ImageService(BaseAGSServer):
             if isinstance(value, (AGSTokenSecurityHandler,
                                   PortalServerSecurityHandler)):
                 self._securityHandler = value
-            else:
-                pass
         elif value is None:
             self._securityHandler = None
     #----------------------------------------------------------------------
@@ -517,15 +515,14 @@ class ImageService(BaseAGSServer):
                Values: json | image | kmz
         """
         params = {
-            "bbox" : bbox,
+            "bbox": bbox,
             "imageSR": imageSR,
             "bboxSR": bboxSR,
-            "size" : "%s %s" % (size[0], size[1]),
-            "pixelType" : pixelType,
-            "compressionQuality" : compressionQuality,
-
+            "size": f"{size[0]} {size[1]}",
+            "pixelType": pixelType,
+            "compressionQuality": compressionQuality,
         }
-        url = self._url + "/exportImage"
+        url = f"{self._url}/exportImage"
         __allowedFormat = ["jpgpng", "png",
                            "png8", "png24",
                            "jpg", "bmp",
@@ -558,21 +555,21 @@ class ImageService(BaseAGSServer):
         if isinstance(time, datetime.datetime):
             params['time'] = local_time_to_online(time)
         if interpolation is not None and \
-           interpolation in __allowedInterpolation and \
-           isinstance(interpolation, str):
+               interpolation in __allowedInterpolation and \
+               isinstance(interpolation, str):
             params['interpolation'] = interpolation
         if pixelType is not None and \
-           pixelType in __allowedPixelTypes:
+               pixelType in __allowedPixelTypes:
             params['pixelType'] = pixelType
         if noDataInterpretation in __allowedInterpolation:
             params['noDataInterpretation']  = noDataInterpretation
         if noData is not None:
             params['noData'] = noData
         if compression is not None and \
-           compression in __allowedCompression:
+               compression in __allowedCompression:
             params['compression'] = compression
         if bandIds is not None and \
-           isinstance(bandIds, list):
+               isinstance(bandIds, list):
             params['bandIds'] = ",".join(bandIds)
         if renderingRule is not None:
             params['renderingRule'] = renderingRule
@@ -583,23 +580,16 @@ class ImageService(BaseAGSServer):
                                 securityHandler=self._securityHandler,
                                 proxy_port=self._proxy_port,
                                 proxy_url=self._proxy_url)
-        elif f == "image":
-            result = self._get(url=url,
-                               param_dict=params,
-                               securityHandler=self._securityHandler,
-                               proxy_url=self._proxy_url,
-                               proxy_port=self._proxy_port,
-                               out_folder=saveFolder,
-                               file_name=saveFile)
-            return result
-        elif f == "kmz":
-            return self._get(url=url,
-                             param_dict=params,
-                             securityHandler=self._securityHandler,
-                             proxy_url=self._proxy_url,
-                             proxy_port=self._proxy_port,
-                             out_folder=saveFolder,
-                             file_name=saveFile)
+        elif f in ["image", "kmz"]:
+            return self._get(
+                url=url,
+                param_dict=params,
+                securityHandler=self._securityHandler,
+                proxy_url=self._proxy_url,
+                proxy_port=self._proxy_port,
+                out_folder=saveFolder,
+                file_name=saveFile,
+            )
     #----------------------------------------------------------------------
     def query(self,
               where="1=1",
@@ -660,11 +650,11 @@ class ImageService(BaseAGSServer):
                   "returnIdsOnly" : returnIDsOnly,
                   "returnCountOnly" : returnCountOnly,
                   }
-        if not timeFilter is None and \
-           isinstance(timeFilter, filters.TimeFilter):
+        if timeFilter is not None and isinstance(timeFilter, filters.TimeFilter):
             params['time'] = timeFilter.filter
-        if not geometryFilter is None and \
-           isinstance(geometryFilter, filters.GeometryFilter):
+        if geometryFilter is not None and isinstance(
+            geometryFilter, filters.GeometryFilter
+        ):
             gf = geometryFilter.filter
             params['geometry'] = gf['geometry']
             params['geometryType'] = gf['geometryType']
@@ -677,7 +667,7 @@ class ImageService(BaseAGSServer):
         if returnDistinctValues is not None:
             params['returnDistinctValues'] = returnDistinctValues
 
-        url = self._url + "/query"
+        url = f"{self._url}/query"
         return self._get(url=url, param_dict=params,
                             securityHandler=self._securityHandler,
                             proxy_url=self._proxy_url,
@@ -786,28 +776,28 @@ class ImageService(BaseAGSServer):
                 esriGeodataTransformApplyReplace |
                 esriGeodataTransformApplyOverwrite
         """
-        url = self._url + "/add"
-        params = {
-            "f" : "json"
-        }
+        url = f"{self._url}/add"
         if itemIds is None and serviceUrl is None:
             raise Exception("An itemId or serviceUrl must be provided")
         if isinstance(itemIds, str):
             itemIds = [itemIds]
         if isinstance(serviceUrl, str):
             serviceUrl = [serviceUrl]
-        params['geodataTransformApplyMethod'] = geodataTransformApplyMethod
-        params['rasterType'] = rasterType
-        params['buildPyramids'] = buildPyramids
-        params['buildThumbnail'] = buildThumbnail
-        params['minimumCellSizeFactor'] = minimumCellSizeFactor
-        params['computeStatistics'] = computeStatistics
-        params['maximumCellSizeFactor'] = maximumCellSizeFactor
-        params['attributes'] = attributes
-        params['geodataTransforms'] = geodataTransforms
-        if not itemIds is None:
+        params = {
+            "f": "json",
+            'geodataTransformApplyMethod': geodataTransformApplyMethod,
+            'rasterType': rasterType,
+            'buildPyramids': buildPyramids,
+            'buildThumbnail': buildThumbnail,
+            'minimumCellSizeFactor': minimumCellSizeFactor,
+            'computeStatistics': computeStatistics,
+            'maximumCellSizeFactor': maximumCellSizeFactor,
+            'attributes': attributes,
+            'geodataTransforms': geodataTransforms,
+        }
+        if itemIds is not None:
             params['itemIds'] = itemIds
-        if not serviceUrl is None:
+        if serviceUrl is not None:
             params['serviceUrl'] = serviceUrl
         return self._post(url=url,
                              param_dict=params,
@@ -886,25 +876,25 @@ class ImageService(BaseAGSServer):
          the geometry nor attributes of catalog items will be returned.
         """
 
-        url = self._url + "/identify"
+        url = f"{self._url}/identify"
         params = {
             "f" : "json",
             "geometry" : geometry,
             "geometryType": geometryType
         }
-        if not mosaicRule is None:
+        if mosaicRule is not None:
             params["mosaicRule"] = mosaicRule
-        if not renderingRule is None:
+        if renderingRule is not None:
             params["renderingRule"] = renderingRule
-        if not renderingRules is None:
+        if renderingRules is not None:
             params["renderingRules"] = renderingRules
-        if not pixelSize is None:
+        if pixelSize is not None:
             params["pixelSize"] = pixelSize
-        if not time is None:
+        if time is not None:
             params["time"] = time
-        if not returnGeometry is None:
+        if returnGeometry is not None:
             params["returnGeometry"] = returnGeometry
-        if not returnCatalogItems is None:
+        if returnCatalogItems is not None:
             params["returnCatalogItems"] = returnCatalogItems
 
         return self._get(url=url,
@@ -1003,7 +993,7 @@ class ImageService(BaseAGSServer):
          esriSquareKilometers
         """
 
-        url = self._url + "/measure"
+        url = f"{self._url}/measure"
         params = {
             "f" : "json",
             "fromGeometry" : fromGeometry,
@@ -1012,15 +1002,15 @@ class ImageService(BaseAGSServer):
             "measureOperation": measureOperation
             }
 
-        if not pixelSize is None:
+        if pixelSize is not None:
             params["pixelSize"] = pixelSize
-        if not mosaicRule is None:
+        if mosaicRule is not None:
             params["mosaicRule"] = mosaicRule
-        if not linearUnit is None:
+        if linearUnit is not None:
             params["linearUnit"] = linearUnit
-        if not angularUnit is None:
+        if angularUnit is not None:
             params["angularUnit"] = angularUnit
-        if not areaUnit is None:
+        if areaUnit is not None:
             params["areaUnit"] = areaUnit
 
         return self._get(url=url,
@@ -1066,18 +1056,18 @@ class ImageService(BaseAGSServer):
          structure, you can specify the pixel size with a simple comma-separated syntax.
         """
 
-        url = self._url + "/computeHistograms"
+        url = f"{self._url}/computeHistograms"
         params = {
             "f" : "json",
             "geometry" : geometry,
             "geometryType": geometryType
             }
 
-        if not mosaicRule is None:
+        if mosaicRule is not None:
             params["mosaicRule"] = mosaicRule
-        if not renderingRule is None:
+        if renderingRule is not None:
             params["renderingRule"] = renderingRule
-        if not pixelSize is None:
+        if pixelSize is not None:
             params["pixelSize"] = pixelSize
 
         return self._get(url=url,
@@ -1123,18 +1113,18 @@ class ImageService(BaseAGSServer):
          structure, you can specify the pixel size with a simple comma-separated syntax.
         """
 
-        url = self._url + "/computeStatisticsHistograms"
+        url = f"{self._url}/computeStatisticsHistograms"
         params = {
             "f" : "json",
             "geometry" : geometry,
             "geometryType": geometryType
         }
 
-        if not mosaicRule is None:
+        if mosaicRule is not None:
             params["mosaicRule"] = mosaicRule
-        if not renderingRule is None:
+        if renderingRule is not None:
             params["renderingRule"] = renderingRule
-        if not pixelSize is None:
+        if pixelSize is not None:
             params["pixelSize"] = pixelSize
 
         return self._get(url=url,
@@ -1211,26 +1201,26 @@ class ImageService(BaseAGSServer):
          this parameter to include all the field values in the results.
         """
 
-        url = self._url + "/getSamples"
+        url = f"{self._url}/getSamples"
         params = {
             "f" : "json",
             "geometry" : geometry,
             "geometryType": geometryType
         }
 
-        if not sampleDistance is None:
+        if sampleDistance is not None:
             params["sampleDistance"] = sampleDistance
-        if not sampleCount is None:
+        if sampleCount is not None:
             params["sampleCount"] = sampleCount
-        if not mosaicRule is None:
+        if mosaicRule is not None:
             params["mosaicRule"] = mosaicRule
-        if not pixelSize is None:
+        if pixelSize is not None:
             params["pixelSize"] = pixelSize
-        if not returnFirstValueOnly is None:
+        if returnFirstValueOnly is not None:
             params["returnFirstValueOnly"] = returnFirstValueOnly
-        if not interpolation is None:
+        if interpolation is not None:
             params["interpolation"] = interpolation
-        if not outFields is None:
+        if outFields is not None:
             params["outFields"] = outFields
 
         return self._get(url=url,
@@ -1246,7 +1236,7 @@ class ImageService(BaseAGSServer):
         the service is true.
         """
         if self.hasColormap:
-            url = self._url + "/colormap"
+            url = f"{self._url}/colormap"
             params = {
                 "f" : "json"
             }

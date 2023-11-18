@@ -28,10 +28,7 @@ class Uploads(abstract.BaseAGOLClass):
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
         self._securityHandler = securityHandler
-        if self._url.lower().endswith("/uploads"):
-            self._url = url
-        else:
-            self._url = url + "/uploads"
+        self._url = url if self._url.lower().endswith("/uploads") else f"{url}/uploads"
     #----------------------------------------------------------------------
     def upload(self, filePath, description=None):
         """
@@ -45,13 +42,13 @@ class Uploads(abstract.BaseAGOLClass):
         output:
          dictionary json response
         """
-        url = self._url + "/upload"
+        url = f"{self._url}/upload"
         files = {'file', filePath}
         params = {
             "f" : "json"
         }
         if description is not None and \
-           isinstance(description, str):
+               isinstance(description, str):
             params['description'] = description
 
         return self._post(url=url,
@@ -72,7 +69,7 @@ class Uploads(abstract.BaseAGOLClass):
         Output:
          dictionary
         """
-        url = self._url + "/register"
+        url = f"{self._url}/register"
         params = {
             "f" : "json",
             "itemName" : itemName,
@@ -102,7 +99,7 @@ class Uploads(abstract.BaseAGOLClass):
         Output:
           dictionary or string
         """
-        url = self._url + "/%s/uploadPart" % registerID
+        url = f"{self._url}/{registerID}/uploadPart"
         params = {
             "f" : "json"
         }
@@ -113,8 +110,7 @@ class Uploads(abstract.BaseAGOLClass):
             if os.fstat(f.fileno()).st_size % size > 0:
                 steps += 1
             for i in range(steps):
-                files = {}
-                tempFile = os.path.join(os.environ['TEMP'], "split.part%s" % i)
+                tempFile = os.path.join(os.environ['TEMP'], f"split.part{i}")
                 if os.path.isfile(tempFile):
                     os.remove(tempFile)
                 with open(tempFile, 'wb') as writer:
@@ -122,7 +118,7 @@ class Uploads(abstract.BaseAGOLClass):
                     writer.flush()
                     writer.close()
                 del writer
-                files['file'] = tempFile
+                files = {'file': tempFile}
                 params['partNum'] = i + 1
                 res = self._post(url=url,
                                   param_dict=params,
@@ -146,7 +142,7 @@ class Uploads(abstract.BaseAGOLClass):
          dictionary
         """
         parts = ",".join(self.parts(registerID=registerID))
-        url = self._url + "/%s/commit"
+        url = f"{self._url}/%s/commit"
         params = {
             "f" : "json",
             "parts" : parts
@@ -161,7 +157,7 @@ class Uploads(abstract.BaseAGOLClass):
     #----------------------------------------------------------------------
     def delete(self, itemId):
         """deletes either a registered item or uploaded item """
-        url = self._url + "/%s/delete" % itemId
+        url = f"{self._url}/{itemId}/delete"
         params = {
             "f" : "json"
         }
@@ -173,7 +169,7 @@ class Uploads(abstract.BaseAGOLClass):
     #----------------------------------------------------------------------
     def parts(self, registerID):
         """returns the parts uploaded for a given item"""
-        url = self._url + "/%s/parts" % registerID
+        url = f"{self._url}/{registerID}/parts"
         params = {
             "f" : "json"
         }
@@ -186,7 +182,7 @@ class Uploads(abstract.BaseAGOLClass):
     @property
     def info(self):
         """returns upload file information"""
-        url = self._url + "/info"
+        url = f"{self._url}/info"
         params = {
             "f" : "json"
         }

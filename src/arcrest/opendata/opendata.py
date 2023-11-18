@@ -49,7 +49,7 @@ class OpenData(BaseOpenData, BaseWebOperations):
         """
         searches the opendata site and returns the dataset results
         """
-        url = self._url + "/datasets.json"
+        url = f"{self._url}/datasets.json"
         param_dict = {
             "sort_by" : sort_by,
             "f" : "json"
@@ -66,20 +66,21 @@ class OpenData(BaseOpenData, BaseWebOperations):
             param_dict['sort_by'] = sort_by
         if sort_order is not None:
             param_dict['sort_order'] = sort_order
-        ds_data =  self._get(url=url,
-                    param_dict=param_dict,
-                    securityHandler=self._securityHandler,
-                    additional_headers=[],
-                    proxy_url=self._proxy_url,
-                    proxy_port=self._proxy_port)
-        return ds_data
+        return self._get(
+            url=url,
+            param_dict=param_dict,
+            securityHandler=self._securityHandler,
+            additional_headers=[],
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
     #----------------------------------------------------------------------
     def getDataset(self, itemId):
         """gets a dataset class"""
         if self._url.lower().find('datasets') > -1:
             url = self._url
         else:
-            url = self._url + "/datasets"
+            url = f"{self._url}/datasets"
         return OpenDataItem(url=url,
                             itemId=itemId,
                             securityHandler=self._securityHandler,
@@ -114,7 +115,9 @@ class OpenDataItem(BaseOpenData, BaseWebOperations):
             self.__init()
     #----------------------------------------------------------------------
     def __delattr__(self, name):
-        raise AttributeError("Attribute '%s' of '%s' object cannot be deleted"%(name,self.__class__.__name__))
+        raise AttributeError(
+            f"Attribute '{name}' of '{self.__class__.__name__}' object cannot be deleted"
+        )
     #----------------------------------------------------------------------
     def __str__(self):
         """returns object as a string"""
@@ -124,7 +127,7 @@ class OpenDataItem(BaseOpenData, BaseWebOperations):
     #----------------------------------------------------------------------
     def __init(self):
         """gets the properties for the site"""
-        url = "%s/%s.json" % (self._url, self._itemId)
+        url = f"{self._url}/{self._itemId}.json"
         params = {"f": "json"}
         json_dict = self._get(url, params,
                          securityHandler=self._securityHandler,
@@ -142,7 +145,7 @@ class OpenDataItem(BaseOpenData, BaseWebOperations):
     def export(self, outFormat="shp", outFolder=None):
         """exports a dataset t"""
         export_formats = {'shp':".zip", 'kml':'.kml', 'geojson':".geojson",'csv': '.csv'}
-        url = "%s/%s%s" % (self._url, self._itemId, export_formats[outFormat])
+        url = f"{self._url}/{self._itemId}{export_formats[outFormat]}"
         results =  self._get(url=url,
                     securityHandler=self._securityHandler,
                     out_folder=outFolder)

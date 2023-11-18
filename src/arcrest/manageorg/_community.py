@@ -26,7 +26,7 @@ class Community(BaseAGOLClass):
         """Constructor"""
         self._url = url
         self._securityHandler = securityHandler
-        if not securityHandler is None:
+        if securityHandler is not None:
             self._referer_url = securityHandler.referer_url
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -37,8 +37,7 @@ class Community(BaseAGOLClass):
     #----------------------------------------------------------------------
     def __iter__(self):
         """returns the key/values of an object"""
-        for k,v in {}.items():
-            yield k,v
+        yield from {}.items()
     #----------------------------------------------------------------------
     def checkUserName(self, username):
         """
@@ -53,7 +52,7 @@ class Community(BaseAGOLClass):
             "f" : "json",
             "usernames" : username
         }
-        url = self._url + "/checkUsernames"
+        url = f"{self._url}/checkUsernames"
         return self._post(url=url,
                              param_dict=params,
                              proxy_url=self._proxy_url,
@@ -67,11 +66,13 @@ class Community(BaseAGOLClass):
         params = {
             "f" : "json",
         }
-        return self._get(url=self._url + "/self",
-                             param_dict=params,
-                             securityHandler=self._securityHandler,
-                             proxy_url=self._proxy_url,
-                             proxy_port=self._proxy_port)
+        return self._get(
+            url=f"{self._url}/self",
+            param_dict=params,
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
     #----------------------------------------------------------------------
     def search(self,
                q,
@@ -103,13 +104,13 @@ class Community(BaseAGOLClass):
             "num" : num,
             "start" : start
         }
-        if not t is None:
+        if t is not None:
             params['t'] = t
-        if not sortField is None:
+        if sortField is not None:
             params['sortField'] = sortField
-        if not sortOrder is None:
+        if sortOrder is not None:
             params['sortOrder'] = sortOrder
-        url = self._url + "/groups"
+        url = f"{self._url}/groups"
         return self._post(url=url,
                              param_dict=params,
                              securityHandler=self._securityHandler,
@@ -135,10 +136,11 @@ class Community(BaseAGOLClass):
         else:
             groupNames = groupNames.upper()
         if 'groups' in communityInfo:
-            for gp in communityInfo['groups']:
-
-                if str(gp['title']).upper() in groupNames:
-                    group_ids.append(gp['id'])
+            group_ids.extend(
+                gp['id']
+                for gp in communityInfo['groups']
+                if str(gp['title']).upper() in groupNames
+            )
         del communityInfo
         return group_ids
     #----------------------------------------------------------------------
@@ -211,11 +213,11 @@ class Community(BaseAGOLClass):
             "isViewOnly" : isViewOnly,
             "isInvitationOnly" : isInvitationOnly
         }
-        url = self._url + "/createGroup"
+        url = f"{self._url}/createGroup"
 
         groups = self.groups
         if thumbnail is not None and \
-           os.path.isfile(thumbnail):
+               os.path.isfile(thumbnail):
             res = self._post(url=url,
                              param_dict=params,
                              files={'thumbnail': thumbnail},
@@ -229,11 +231,11 @@ class Community(BaseAGOLClass):
                                  proxy_port=self._proxy_port)
 
         if "group" not in res:
-            raise Exception("%s" % res)
+            raise Exception(f"{res}")
         if "id" not in res['group']:
-            raise Exception("%s" % res)
+            raise Exception(f"{res}")
         groupId = res['group']['id']
-        url = "%s/groups/%s" % (self.root, groupId)
+        url = f"{self.root}/groups/{groupId}"
         return Group(url=url,
                      securityHandler=self._securityHandler,
                      proxy_url=self._proxy_url,
@@ -249,22 +251,25 @@ class Community(BaseAGOLClass):
     @property
     def groups(self):
         """ returns the group object """
-        return Groups(url="%s/groups" % self.root,
-                       securityHandler=self._securityHandler,
-                       proxy_url=self._proxy_url,
-                       proxy_port=self._proxy_port,
-                       initalize=False)
+        return Groups(
+            url=f"{self.root}/groups",
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+            initalize=False,
+        )
     #----------------------------------------------------------------------
     @property
     def users(self):
         """
            returns the user class object for current session
         """
-        return Users(url="%s/users" % self.root,
-                    securityHandler=self._securityHandler,
-                    proxy_url=self._proxy_url,
-                    proxy_port=self._proxy_port,
-                    )
+        return Users(
+            url=f"{self.root}/users",
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
 ########################################################################
 class Groups(BaseAGOLClass):
     """
@@ -305,7 +310,7 @@ class Groups(BaseAGOLClass):
         """Constructor"""
         self._url = url
         self._securityHandler = securityHandler
-        if not securityHandler is None:
+        if securityHandler is not None:
             self._referer_url = securityHandler.referer_url
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -343,7 +348,7 @@ class Groups(BaseAGOLClass):
     def __iter__(self):
         """returns Group objects"""
         self.__init()
-        q = " orgid: %s" % self._portalId
+        q = f" orgid: {self._portalId}"
 
         nextStart = 0
         while nextStart > -1:
@@ -400,7 +405,7 @@ class Groups(BaseAGOLClass):
         """
         gets a group based on it's ID
         """
-        url = "%s/%s" % (self.root, groupId)
+        url = f"{self.root}/{groupId}"
         return Group(url=url,
                      securityHandler=self._securityHandler,
                      proxy_url=self._proxy_url,
@@ -466,7 +471,7 @@ class Group(BaseAGOLClass):
         """Constructor"""
         self._url = url
         self._securityHandler = securityHandler
-        if not securityHandler is None:
+        if securityHandler is not None:
             self._referer_url = securityHandler.referer_url
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -487,10 +492,10 @@ class Group(BaseAGOLClass):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print (k, " - attribute not implemented in Group class.")
     #----------------------------------------------------------------------
@@ -711,11 +716,13 @@ class Group(BaseAGOLClass):
                     "f" : "json",
                     "targetUsername" : targetUsername
                 }
-        return self._post(url=self._url + "/reassign",
-                             param_dict=params,
-                             securityHandler=self._securityHandler,
-                             proxy_url=self._proxy_url,
-                             proxy_port=self._proxy_port)
+        return self._post(
+            url=f"{self._url}/reassign",
+            param_dict=params,
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
     #----------------------------------------------------------------------
     def update(self,
                clearEmptyFields=True,
@@ -795,21 +802,22 @@ class Group(BaseAGOLClass):
         if clearEmptyFields is not None:
             params['clearEmptyFields'] = clearEmptyFields
         files = {}
-        url = self._url + "/update"
+        url = f"{self._url}/update"
 
         if thumbnail is not None and \
-           os.path.isfile(thumbnail):
+               os.path.isfile(thumbnail):
             files['thumbnail'] =thumbnail
         res = None
         if thumbnail is not None and \
-           os.path.isfile(thumbnail):
-            res = self._post(url=url,
-                             param_dict=params,
-                             files=files,
-                             securityHandler=self._securityHandler,
-                             proxy_url=self._proxy_url,
-                             proxy_port=self._proxy_port)
-            return res
+               os.path.isfile(thumbnail):
+            return self._post(
+                url=url,
+                param_dict=params,
+                files=files,
+                securityHandler=self._securityHandler,
+                proxy_url=self._proxy_url,
+                proxy_port=self._proxy_port,
+            )
         else:
             res = self._post(url=url, param_dict=params,
                                 securityHandler=self._securityHandler,
@@ -825,11 +833,13 @@ class Group(BaseAGOLClass):
         params = {
             "f" : "json",
         }
-        return self._post(url=self._url + "/delete",
-                             param_dict=params,
-                             securityHandler=self._securityHandler,
-                             proxy_url=self._proxy_url,
-                             proxy_port=self._proxy_port)
+        return self._post(
+            url=f"{self._url}/delete",
+            param_dict=params,
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
     #----------------------------------------------------------------------
     def join(self):
         """
@@ -852,11 +862,13 @@ class Group(BaseAGOLClass):
         params = {
             "f" : "json",
         }
-        return self._post(url=self._url + "/join",
-                             securityHandler=self._securityHandler,
-                             param_dict=params,
-                             proxy_url=self._proxy_url,
-                             proxy_port=self._proxy_port)
+        return self._post(
+            url=f"{self._url}/join",
+            securityHandler=self._securityHandler,
+            param_dict=params,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
     #----------------------------------------------------------------------
     def invite(self, users, role, expiration=1440):
         """
@@ -893,11 +905,13 @@ class Group(BaseAGOLClass):
             "role" : role,
             "expiration" : expiration
         }
-        return self._post(url=self._url + "/invite",
-                             securityHandler=self._securityHandler,
-                             param_dict=params,
-                             proxy_url=self._proxy_url,
-                             proxy_port=self._proxy_port)
+        return self._post(
+            url=f"{self._url}/invite",
+            securityHandler=self._securityHandler,
+            param_dict=params,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
     #----------------------------------------------------------------------
     def leave(self):
         """
@@ -912,11 +926,13 @@ class Group(BaseAGOLClass):
         params = {
             "f" : "json"
         }
-        return self._post(url=self._url + "/leave",
-                             param_dict=params,
-                             securityHandler=self._securityHandler,
-                             proxy_url=self._proxy_url,
-                             proxy_port=self._proxy_port)
+        return self._post(
+            url=f"{self._url}/leave",
+            param_dict=params,
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
     #----------------------------------------------------------------------
     def removeUsersFromGroup(self, users):
         """
@@ -936,11 +952,13 @@ class Group(BaseAGOLClass):
             "f" : "json",
             "users" : users
         }
-        return self._post(url=self._url + "/removeUsers",
-                             param_dict=params,
-                             securityHandler=self._securityHandler,
-                             proxy_url=self._proxy_url,
-                             proxy_port=self._proxy_port)
+        return self._post(
+            url=f"{self._url}/removeUsers",
+            param_dict=params,
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
     #----------------------------------------------------------------------
     def addUsersToGroups(self, users):
         """
@@ -958,7 +976,7 @@ class Group(BaseAGOLClass):
         Output:
            A JSON array of usernames that were not added.
         """
-        url = self._url + "/addUsers"
+        url = f"{self._url}/addUsers"
         params = {
             "f" : "json",
             "users" : users,
@@ -977,16 +995,18 @@ class Group(BaseAGOLClass):
         params = {
             "f" : "json"
             }
-        return self._get(url=self._url + "/users",
-                            securityHandler=self._securityHandler,
-                             param_dict=params,
-                             proxy_url=self._proxy_url,
-                             proxy_port=self._proxy_port)
+        return self._get(
+            url=f"{self._url}/users",
+            securityHandler=self._securityHandler,
+            param_dict=params,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
     #----------------------------------------------------------------------
     @property
     def applications(self):
         """returns all the group applications to join"""
-        url = self._url + "/applications"
+        url = f"{self._url}/applications"
         params = {"f" : "json"}
         res = self._get(url=url,
                            param_dict=params,
@@ -994,13 +1014,15 @@ class Group(BaseAGOLClass):
                            proxy_port=self._proxy_port)
         items = []
         if "applications" in res.keys():
-            for apps in res['applications']:
-                items.append(
-                    self.Application(url="%s/%s" % (self._url, apps['username']),
-                                     securityHandler=self._securityHandler,
-                                     proxy_url=self._proxy_url,
-                                     proxy_port=self._proxy_port)
+            items.extend(
+                self.Application(
+                    url=f"{self._url}/{apps['username']}",
+                    securityHandler=self._securityHandler,
+                    proxy_url=self._proxy_url,
+                    proxy_port=self._proxy_port,
                 )
+                for apps in res['applications']
+            )
         return items
     ########################################################################
     class Application(BaseAGOLClass):
@@ -1021,7 +1043,7 @@ class Group(BaseAGOLClass):
             """Constructor"""
             self._url = url
             self._securityHandler = securityHandler
-            if not securityHandler is None:
+            if securityHandler is not None:
                 self._referer_url = securityHandler.referer_url
             self._proxy_port = proxy_port
             self._proxy_url = proxy_url
@@ -1042,10 +1064,10 @@ class Group(BaseAGOLClass):
             self._json = json.dumps(json_dict)
             attributes = [attr for attr in dir(self)
                           if not attr.startswith('__') and \
-                          not attr.startswith('_')]
+                                  not attr.startswith('_')]
             for k,v in json_dict.items():
                 if k in attributes:
-                    setattr(self, "_"+ k, json_dict[k])
+                    setattr(self, f"_{k}", json_dict[k])
                 else:
                     print (k, " - attribute not implemented in Group.Application class.")
         #----------------------------------------------------------------------
@@ -1101,11 +1123,13 @@ class Group(BaseAGOLClass):
             params = {
                 "f" : "json",
             }
-            return self._post(url="%s/accept" % (self.root),
-                                 param_dict=params,
-                                 securityHandler=self._securityHandler,
-                                 proxy_url=self._proxy_url,
-                                 proxy_port=self._proxy_port)
+            return self._post(
+                url=f"{self.root}/accept",
+                param_dict=params,
+                securityHandler=self._securityHandler,
+                proxy_url=self._proxy_url,
+                proxy_port=self._proxy_port,
+            )
         #----------------------------------------------------------------------
         def decline(self):
             """
@@ -1120,11 +1144,13 @@ class Group(BaseAGOLClass):
             params = {
                 "f" : "json",
             }
-            return self._post(url="%s/decline" % self.root,
-                                 param_dict=params,
-                                 securityHandler=self._securityHandler,
-                                 proxy_url=self._proxy_url,
-                                 proxy_port=self._proxy_port)
+            return self._post(
+                url=f"{self.root}/decline",
+                param_dict=params,
+                securityHandler=self._securityHandler,
+                proxy_url=self._proxy_url,
+                proxy_port=self._proxy_port,
+            )
 ########################################################################
 class Users(BaseAGOLClass):
     """represents the users on a given portal or agol system"""
@@ -1137,10 +1163,7 @@ class Users(BaseAGOLClass):
     def __init__(self, url, securityHandler,
                  proxy_url=None, proxy_port=None):
         """Constructor"""
-        if url.endswith('/users'):
-            self._url = url
-        else:
-            self._url = url + "/users"
+        self._url = url if url.endswith('/users') else f"{url}/users"
         self._securityHandler = securityHandler
         self._proxy_url = proxy_url
         self._proxy_port = proxy_port
@@ -1208,12 +1231,14 @@ class Users(BaseAGOLClass):
     def __getUsername(self):
         """tries to parse the user name from various objects"""
 
-        if self._securityHandler is not None and \
-           not self._securityHandler._username is None:
+        if (
+            self._securityHandler is not None
+            and self._securityHandler._username is not None
+        ):
             return self._securityHandler._username
         elif self._securityHandler is not None and \
-               hasattr(self._securityHandler, "org_url") and \
-               self._securityHandler.org_url is not None:
+                   hasattr(self._securityHandler, "org_url") and \
+                   self._securityHandler.org_url is not None:
             from .administration import Administration
             user = Administration(url=self._securityHandler.org_url,
                                   securityHandler=self._securityHandler,
@@ -1235,7 +1260,7 @@ class Users(BaseAGOLClass):
         if username is None:
             username = self.__getUsername()
         parsedUsername = urlparse.quote(username)
-        url = self.root + "/%s" % parsedUsername
+        url = f"{self.root}/{parsedUsername}"
         return User(url=url,
                     securityHandler=self._securityHandler,
                     proxy_url=self._proxy_url,
@@ -1297,7 +1322,7 @@ class User(BaseAGOLClass):
         """Constructor"""
         self._url = url
         self._securityHandler = securityHandler
-        if not securityHandler is None:
+        if securityHandler is not None:
             self._referer_url = securityHandler.referer_url
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -1318,10 +1343,10 @@ class User(BaseAGOLClass):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in User class.")
     #----------------------------------------------------------------------
@@ -1620,7 +1645,7 @@ class User(BaseAGOLClass):
     @property
     def userTags(self):
         """gets a list of current user's tags"""
-        url = "%s/tags" % self.root
+        url = f"{self.root}/tags"
         params = {
             "f" : "json"
         }
@@ -1633,7 +1658,7 @@ class User(BaseAGOLClass):
     @property
     def invitations(self):
         """returns a class to access the current user's invitations"""
-        url = "%s/invitations" % self.root
+        url = f"{self.root}/invitations"
         return Invitations(url=url,
                            securityHandler=self._securityHandler,
                            proxy_url=self._proxy_url,
@@ -1648,7 +1673,7 @@ class User(BaseAGOLClass):
         marked as new. The user can mark it as read or delete the notification.
         """
         params = {"f": "json"}
-        url = "%s/notifications" % self.root
+        url = f"{self.root}/notifications"
         return Notifications(url=url,
                              securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -1658,7 +1683,7 @@ class User(BaseAGOLClass):
         """
         forces a given user to have to re-login into portal/agol
         """
-        url = "%s/invalidateSessions" % self.root
+        url = f"{self.root}/invalidateSessions"
         params = {"f": "json"}
         return self._post(url=url,
                              param_dict=params,
@@ -1670,7 +1695,7 @@ class User(BaseAGOLClass):
               securityAnswer=None,
               newSecurityQuestionIdx=None,
               newSecurityAnswer=None):
-        url = self.root + "/reset"
+        url = f"{self.root}/reset"
         params = {
             "f" : "json",
             "password" : old_password,
@@ -1699,7 +1724,7 @@ class User(BaseAGOLClass):
                    user's profile email address.  The default is True.
 
         """
-        url = self.root + "/reset"
+        url = f"{self.root}/reset"
         params = {
             "f" : "json",
             "email" : email
@@ -1714,24 +1739,21 @@ class User(BaseAGOLClass):
                        hours="now"):
         """sets a time when a user must reset their password"""
 
-        params = {
-            "f" : "json"
-        }
         expiration = -1
-        if isinstance(hours, str):
-            if expiration == "now":
-                expiration = -1
-            elif expiration == "never":
-                expiration = 0
-            else:
-                expiration = -1
-        elif isinstance(expiration, (int, long)):
+        if (
+            isinstance(hours, str)
+            and (expiration == "now" or expiration != "never")
+            or not isinstance(hours, str)
+            and not isinstance(expiration, (int, long))
+        ):
+            expiration = -1
+        elif isinstance(hours, str):
+            expiration = 0
+        else:
             dt = datetime.now() + timedelta(hours=hours)
             expiration = local_time_to_online(dt=dt)
-        else:
-            expiration = -1
-        params['expiration'] = expiration
-        url = "%s/expirePassword" % self.root
+        params = {"f": "json", 'expiration': expiration}
+        url = f"{self.root}/expirePassword"
         return self._post(url=url,
                              param_dict=params,
                              securityHandler=self._securityHandler,
@@ -1746,7 +1768,7 @@ class User(BaseAGOLClass):
         params = {
                     "f" : "json"
                 }
-        url = "%s/disable" % self.root
+        url = f"{self.root}/disable"
         return self._post(url=url,
                              param_dict=params,
                              securityHandler=self._securityHandler,
@@ -1764,7 +1786,7 @@ class User(BaseAGOLClass):
         params = {
             "f" : "json"
         }
-        url = self.root + "/enable"
+        url = f"{self.root}/enable"
         return self._post(url=url,
                    param_dict=params,
                    securityHandler=self._securityHandler,
@@ -1855,19 +1877,19 @@ class User(BaseAGOLClass):
         if securityAnswer is not None:
             params['securityAnswer'] = securityAnswer
         if userType is not None and \
-           userType.lower() in ['both', 'arcgisorg','arcgisonly']:
+               userType.lower() in ['both', 'arcgisorg','arcgisonly']:
             params['userType'] = userType.lower()
         files = {}
 
 
-        url =  "%s/update" % self.root
+        url = f"{self.root}/update"
 
         if thumbnail is not None and \
-           os.path.isfile(thumbnail):
+               os.path.isfile(thumbnail):
             files.append(('thumbnail', thumbnail, os.path.basename(thumbnail)))
         res = None
         if thumbnail is not None and \
-           os.path.isfile(thumbnail):
+               os.path.isfile(thumbnail):
             res = self._post(url=url,
                              param_dict=params,
                              files=files,
@@ -1898,7 +1920,7 @@ class User(BaseAGOLClass):
         params = {
             "f" : "json"
         }
-        url = self.root + "/delete"
+        url = f"{self.root}/delete"
         return self._post(url=url,
                              param_dict=params,
                              securityHandler=self._securityHandler,
@@ -1947,7 +1969,7 @@ class Invitations(BaseAGOLClass):
             """Constructor"""
             self._url = url
             self._securityHandler = securityHandler
-            if not securityHandler is None:
+            if securityHandler is not None:
                 self._referer_url = securityHandler.referer_url
             self._proxy_port = proxy_port
             self._proxy_url = proxy_url
@@ -1968,10 +1990,10 @@ class Invitations(BaseAGOLClass):
             self._json = json.dumps(json_dict)
             attributes = [attr for attr in dir(self)
                           if not attr.startswith('__') and \
-                          not attr.startswith('_')]
+                                  not attr.startswith('_')]
             for k,v in json_dict.items():
                 if k in attributes:
-                    setattr(self, "_"+ k, json_dict[k])
+                    setattr(self, f"_{k}", json_dict[k])
                 else:
                     print( k, " - attribute not implemented in Invitation class.")
         #----------------------------------------------------------------------
@@ -2119,7 +2141,7 @@ class Invitations(BaseAGOLClass):
         """Constructor"""
         self._url = url
         self._securityHandler = securityHandler
-        if not securityHandler is None:
+        if securityHandler is not None:
             self._referer_url = securityHandler.referer_url
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -2140,10 +2162,10 @@ class Invitations(BaseAGOLClass):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in Invitations class.")
     #----------------------------------------------------------------------
@@ -2172,7 +2194,7 @@ class Invitations(BaseAGOLClass):
         items = []
         for n in self._userInvitations:
             if "id" in n:
-                url = "%s/%s" % (self.root, n['id'])
+                url = f"{self.root}/{n['id']}"
                 items.append(self.Invitation(url=url,
                                              securityHandler=self._securityHandler,
                                              proxy_url=self._proxy_url,
@@ -2216,7 +2238,7 @@ class Notifications(BaseAGOLClass):
             """Constructor"""
             self._url = url
             self._securityHandler = securityHandler
-            if not securityHandler is None:
+            if securityHandler is not None:
                 self._referer_url = securityHandler.referer_url
             self._proxy_port = proxy_port
             self._proxy_url = proxy_url
@@ -2237,10 +2259,10 @@ class Notifications(BaseAGOLClass):
             self._json = json.dumps(json_dict)
             attributes = [attr for attr in dir(self)
                           if not attr.startswith('__') and \
-                          not attr.startswith('_')]
+                                  not attr.startswith('_')]
             for k,v in json_dict.items():
                 if k in attributes:
-                    setattr(self, "_"+ k, json_dict[k])
+                    setattr(self, f"_{k}", json_dict[k])
                 else:
                     print( k, " - attribute not implemented in Notification class.")
         #----------------------------------------------------------------------
@@ -2311,7 +2333,7 @@ class Notifications(BaseAGOLClass):
         #----------------------------------------------------------------------
         def delete(self):
             """deletes the current notification from the user"""
-            url = "%s/delete" % self.root
+            url = f"{self.root}/delete"
             params = {"f":"json"}
             return self._post(url=url,
                                  param_dict=params,
@@ -2328,7 +2350,7 @@ class Notifications(BaseAGOLClass):
         """Constructor"""
         self._url = url
         self._securityHandler = securityHandler
-        if not securityHandler is None:
+        if securityHandler is not None:
             self._referer_url = securityHandler.referer_url
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -2349,10 +2371,10 @@ class Notifications(BaseAGOLClass):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in Notifications class.")
     #----------------------------------------------------------------------
@@ -2381,7 +2403,7 @@ class Notifications(BaseAGOLClass):
         items = []
         for n in self._notifications:
             if "id" in n:
-                url = "%s/%s" % (self.root, n['id'])
+                url = f"{self.root}/{n['id']}"
                 items.append(self.Notification(url=url,
                                                securityHandler=self._securityHandler,
                                                proxy_url=self._proxy_url,

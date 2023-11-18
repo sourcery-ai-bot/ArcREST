@@ -51,7 +51,7 @@ class AGSAdministration(BaseAGSServer):
                  initialize=False):
         """Constructor"""
         if url.lower().endswith('/admin') == False:
-            url = "%s/admin" % url
+            url = f"{url}/admin"
         self._url = url
         if securityHandler is not None:
             if  isinstance(securityHandler, PKISecurityHandler):
@@ -91,10 +91,10 @@ class AGSAdministration(BaseAGSServer):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                     if not attr.startswith('__') and \
-                    not attr.startswith('_')]
+                        not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print (k, " - attribute not implemented manageags.AGSAdministration.")
             del k
@@ -171,7 +171,7 @@ class AGSAdministration(BaseAGSServer):
            runAsync - A flag to indicate if the operation needs to be run
              asynchronously. Values: true | false
         """
-        url = self._url + "/createNewSite"
+        url = f"{self._url}/createNewSite"
         params = {
             "f" : "json",
             "cluster" : cluster,
@@ -210,7 +210,7 @@ class AGSAdministration(BaseAGSServer):
            username - The name of an administrative account for the site.
            password - The password of the administrative account.
         """
-        url = self._url + "/joinSite"
+        url = f"{self._url}/joinSite"
         params = {
             "f" : "json",
             "adminURL" : adminURL,
@@ -239,7 +239,7 @@ class AGSAdministration(BaseAGSServer):
           - All server machines are unregistered from the site.
           - The configuration store is deleted.
         """
-        url = self._url + "/deleteSite"
+        url = f"{self._url}/deleteSite"
         params = {
             "f" : "json"
         }
@@ -263,7 +263,7 @@ class AGSAdministration(BaseAGSServer):
             be downloaded.
 
         """
-        url = self._url + "/exportSite"
+        url = f"{self._url}/exportSite"
         params = {
             "f" : "json"
         }
@@ -295,7 +295,7 @@ class AGSAdministration(BaseAGSServer):
            location - A file path to an exported configuration or an ID
             referencing the stored configuration on the server.
         """
-        url = self._url + "/importSite"
+        url = f"{self._url}/importSite"
         params = {
             "f" : "json",
             "location" : location
@@ -309,7 +309,7 @@ class AGSAdministration(BaseAGSServer):
     @property
     def publicKey(self):
         """gets the public key"""
-        url = self._url + "/publicKey"
+        url = f"{self._url}/publicKey"
         params = {
             "f" : "json",
         }
@@ -324,30 +324,28 @@ class AGSAdministration(BaseAGSServer):
         """gets a reference to the machines object"""
         if self._resources is None:
             self.__init()
-        if "machines" in self._resources:
-            url = self._url + "/machines"
-            return _machines.Machines(url,
-                                      securityHandler=self._securityHandler,
-                                      initialize=False,
-                                      proxy_url=self._proxy_url,
-                                      proxy_port=self._proxy_port)
-        else:
+        if "machines" not in self._resources:
             return None
+        url = f"{self._url}/machines"
+        return _machines.Machines(url,
+                                  securityHandler=self._securityHandler,
+                                  initialize=False,
+                                  proxy_url=self._proxy_url,
+                                  proxy_port=self._proxy_port)
     #----------------------------------------------------------------------
     @property
     def data(self):
         """returns the reference to the data functions as a class"""
         if self._resources is None:
             self.__init()
-        if "data" in self._resources:
-            url = self._url + "/data"
-            return _data.Data(url=url,
-                              securityHandler=self._securityHandler,
-                              initialize=True,
-                              proxy_url=self._proxy_url,
-                              proxy_port=self._proxy_port)
-        else:
+        if "data" not in self._resources:
             return None
+        url = f"{self._url}/data"
+        return _data.Data(url=url,
+                          securityHandler=self._securityHandler,
+                          initialize=True,
+                          proxy_url=self._proxy_url,
+                          proxy_port=self._proxy_port)
     #----------------------------------------------------------------------
     @property
     def info(self):
@@ -356,7 +354,7 @@ class AGSAdministration(BaseAGSServer):
         """
         if self._resources is None:
             self.__init()
-        url = self._url + "/info"
+        url = f"{self._url}/info"
         return _info.Info(url=url,
                           securityHandler=self._securityHandler,
                           proxy_url=self._proxy_url,
@@ -368,15 +366,14 @@ class AGSAdministration(BaseAGSServer):
         """returns the clusters functions if supported in resources"""
         if self._resources is None:
             self.__init()
-        if "clusters" in self._resources:
-            url = self._url + "/clusters"
-            return _clusters.Cluster(url=url,
-                                     securityHandler=self._securityHandler,
-                                     proxy_url=self._proxy_url,
-                                     proxy_port=self._proxy_port,
-                                     initialize=True)
-        else:
+        if "clusters" not in self._resources:
             return None
+        url = f"{self._url}/clusters"
+        return _clusters.Cluster(url=url,
+                                 securityHandler=self._securityHandler,
+                                 proxy_url=self._proxy_url,
+                                 proxy_port=self._proxy_port,
+                                 initialize=True)
     #----------------------------------------------------------------------
     @property
     def services(self):
@@ -386,15 +383,14 @@ class AGSAdministration(BaseAGSServer):
         """
         if self._resources is None:
             self.__init()
-        if "services" in self._resources:
-            url = self._url + "/services"
-            return _services.Services(url=url,
-                                      securityHandler=self._securityHandler,
-                                      proxy_url=self._proxy_url,
-                                      proxy_port=self._proxy_port,
-                                      initialize=True)
-        else:
+        if "services" not in self._resources:
             return None
+        url = f"{self._url}/services"
+        return _services.Services(url=url,
+                                  securityHandler=self._securityHandler,
+                                  proxy_url=self._proxy_url,
+                                  proxy_port=self._proxy_port,
+                                  initialize=True)
     #----------------------------------------------------------------------
     @property
     def usagereports(self):
@@ -404,20 +400,19 @@ class AGSAdministration(BaseAGSServer):
         """
         if self._resources is None:
             self.__init()
-        if "usagereports" in self._resources:
-            url = self._url + "/usagereports"
-            return _usagereports.UsageReports(url=url,
-                                              securityHandler=self._securityHandler,
-                                              proxy_url=self._proxy_url,
-                                              proxy_port=self._proxy_port,
-                                              initialize=True)
-        else:
+        if "usagereports" not in self._resources:
             return None
+        url = f"{self._url}/usagereports"
+        return _usagereports.UsageReports(url=url,
+                                          securityHandler=self._securityHandler,
+                                          proxy_url=self._proxy_url,
+                                          proxy_port=self._proxy_port,
+                                          initialize=True)
     #----------------------------------------------------------------------
     @property
     def kml(self):
         """returns the kml functions for server"""
-        url = self._url + "/kml"
+        url = f"{self._url}/kml"
         return _kml.KML(url=url,
                         securityHandler=self._securityHandler,
                         proxy_url=self._proxy_url,
@@ -429,72 +424,67 @@ class AGSAdministration(BaseAGSServer):
         """returns an object to work with the site logs"""
         if self._resources is None:
             self.__init()
-        if "logs" in self._resources:
-            url = self._url + "/logs"
-            return _logs.Log(url=url,
-                             securityHandler=self._securityHandler,
-                             proxy_url=self._proxy_url,
-                             proxy_port=self._proxy_port,
-                             initialize=True)
-        else:
+        if "logs" not in self._resources:
             return None
+        url = f"{self._url}/logs"
+        return _logs.Log(url=url,
+                         securityHandler=self._securityHandler,
+                         proxy_url=self._proxy_url,
+                         proxy_port=self._proxy_port,
+                         initialize=True)
     #----------------------------------------------------------------------
     @property
     def mode(self):
         """returns an object to work with the site mode"""
         if self._resources is None:
             self.__init()
-        if "mode" in self._resources:
-            url = self._url + "/mode"
-            return _mode.Mode(url=url,
-                              securityHandler=self._securityHandler,
-                              proxy_url=self._proxy_url,
-                              proxy_port=self._proxy_port,
-                              initialize=True)
-        else:
-            return None            
+        if "mode" not in self._resources:
+            return None
+        url = f"{self._url}/mode"
+        return _mode.Mode(url=url,
+                          securityHandler=self._securityHandler,
+                          proxy_url=self._proxy_url,
+                          proxy_port=self._proxy_port,
+                          initialize=True)            
     #----------------------------------------------------------------------
     @property
     def security(self):
         """returns an object to work with the site security"""
         if self._resources is None:
             self.__init()
-        if "security" in self._resources:
-            url = self._url + "/security"
-            return _security.Security(url=url,
-                                      securityHandler=self._securityHandler,
-                                      proxy_url=self._proxy_url,
-                                      proxy_port=self._proxy_port,
-                                      initialize=True)
-        else:
+        if "security" not in self._resources:
             return None
+        url = f"{self._url}/security"
+        return _security.Security(url=url,
+                                  securityHandler=self._securityHandler,
+                                  proxy_url=self._proxy_url,
+                                  proxy_port=self._proxy_port,
+                                  initialize=True)
     #----------------------------------------------------------------------
     @property
     def system(self):
         """returns an object to work with the site system"""
         if self._resources is None:
             self.__init()
-        if "system" in self._resources:
-            url = self._url + "/system"
-            return _system.System(url=url,
-                                  securityHandler=self._securityHandler,
-                                  proxy_url=self._proxy_url,
-                                  proxy_port=self._proxy_port,
-                                  initialize=True)
-        else:
+        if "system" not in self._resources:
             return None
+        url = f"{self._url}/system"
+        return _system.System(url=url,
+                              securityHandler=self._securityHandler,
+                              proxy_url=self._proxy_url,
+                              proxy_port=self._proxy_port,
+                              initialize=True)
     #----------------------------------------------------------------------
     @property
     def uploads(self):
         """returns an object to work with the site uploads"""
         if self._resources is None:
             self.__init()
-        if "uploads" in self._resources:
-            url = self._url + "/uploads"
-            return _uploads.Uploads(url=url,
-                                    securityHandler=self._securityHandler,
-                                    proxy_url=self._proxy_url,
-                                    proxy_port=self._proxy_port,
-                                    initialize=True)
-        else:
+        if "uploads" not in self._resources:
             return None
+        url = f"{self._url}/uploads"
+        return _uploads.Uploads(url=url,
+                                securityHandler=self._securityHandler,
+                                proxy_url=self._proxy_url,
+                                proxy_port=self._proxy_port,
+                                initialize=True)

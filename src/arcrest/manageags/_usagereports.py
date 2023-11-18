@@ -27,7 +27,7 @@ class UsageReports(BaseAGSServer):
         if url.lower().endswith('/usagereports'):
             self._url = url
         else:
-            self._url = url + "/usagereports"
+            self._url = f"{url}/usagereports"
         self._securityHandler = securityHandler
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -46,10 +46,10 @@ class UsageReports(BaseAGSServer):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in UsageReports.")
             del k
@@ -73,7 +73,7 @@ class UsageReports(BaseAGSServer):
             self.__init()
         self._reports = []
         for r in self._metrics:
-            url = self._url + "/%s" % six.moves.urllib.parse.quote_plus(r['reportname'])
+            url = f"{self._url}/{six.moves.urllib.parse.quote_plus(r['reportname'])}"
             self._reports.append(UsageReport(url=url,
                                              securityHandler=self._securityHandler,
                                              proxy_url=self._proxy_url,
@@ -100,7 +100,7 @@ class UsageReports(BaseAGSServer):
         params = {
             "f" : "json"
         }
-        url = self._url + "/settings"
+        url = f"{self._url}/settings"
         return self._get(url=url,
                             param_dict=params,
                             securityHandler=self._securityHandler,
@@ -132,7 +132,7 @@ class UsageReports(BaseAGSServer):
             "enabled" : enabled,
             "samplingInterval"  : samplingInterval
         }
-        url = self._url + "/settings/edit"
+        url = f"{self._url}/settings/edit"
         return self._post(url=url,
                              param_dict=params,
                              securityHandler=self._securityHandler,
@@ -245,7 +245,7 @@ class UsageReports(BaseAGSServer):
            since="LAST_DAY"
         )
         """
-        url = self._url + "/add"
+        url = f"{self._url}/add"
 
         params = {
             "f" : "json",
@@ -318,14 +318,14 @@ class UsageReport(BaseAGSServer):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k.lower() == "from":
                 self._from = v
             elif k.lower() == "to":
                 self._to = v
             elif k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print (k, " - attribute not implemented in manageags.UsageReport.")
             del k
@@ -444,7 +444,7 @@ class UsageReport(BaseAGSServer):
             "f" : "json",
             "usagereport" : json.dumps(usagereport_dict)
         }
-        url = self._url + "/edit"
+        url = f"{self._url}/edit"
         return self._post(url=url,
                              param_dict=params,
                              securityHandler=self._securityHandler,
@@ -453,7 +453,7 @@ class UsageReport(BaseAGSServer):
     #----------------------------------------------------------------------
     def delete(self):
         """deletes the current report"""
-        url = self._url + "/delete"
+        url = f"{self._url}/delete"
         params = {
             "f" : "json",
         }
@@ -493,7 +493,7 @@ class UsageReport(BaseAGSServer):
             "f" : "json",
             "filter" : queryFilter
         }
-        url = self._url + "/data"
+        url = f"{self._url}/data"
         return self._post(url=url,
                              param_dict=params,
                              securityHandler=self._securityHandler,

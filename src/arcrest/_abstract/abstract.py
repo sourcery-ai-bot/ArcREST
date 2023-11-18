@@ -154,9 +154,7 @@ class BaseAGSServer(BaseWebOperations):
         """
         if not obj:
             return ''
-        if isinstance(obj, list):
-            return ', '.join(map(self._tostr, obj))
-        return str(obj)
+        return ', '.join(map(self._tostr, obj)) if isinstance(obj, list) else str(obj)
     #----------------------------------------------------------------------
     def _unicode_convert(self, obj):
         """ converts unicode to anscii """
@@ -203,13 +201,13 @@ class BaseAGOLClass(BaseWebOperations):
 
         if org_url is not None and org_url != '':
             if not org_url.startswith('http://') and not org_url.startswith('https://'):
-                org_url = 'http://' + org_url
+                org_url = f'http://{org_url}'
             self._org_url = org_url
 
         if self._org_url.lower().find('/sharing/rest') > -1:
             self._url = self._org_url
         else:
-            self._url = self._org_url + "/sharing/rest"
+            self._url = f"{self._org_url}/sharing/rest"
 
         if self._url.startswith('http://'):
             self._surl = self._url.replace('http://', 'https://')
@@ -217,7 +215,7 @@ class BaseAGOLClass(BaseWebOperations):
             self._surl  =  self._url
 
         if token_url is None:
-            self._token_url = self._surl  + '/generateToken'
+            self._token_url = f'{self._surl}/generateToken'
         else:
             self._token_url = token_url
 
@@ -251,25 +249,20 @@ class BaseAGOLClass(BaseWebOperations):
     #----------------------------------------------------------------------
     def _list_files(self, path):
         """lists files in a given directory"""
-        files = []
-        for f in glob.glob(pathname=path):
-            files.append(f)
-        files.sort()
-        return files
+        return sorted(glob.glob(pathname=path))
     #----------------------------------------------------------------------
     def _get_content_type(self, filename):
         """ gets the content type of a file """
         mntype = mimetypes.guess_type(filename)[0]
         filename, fileExtension = os.path.splitext(filename)
-        if mntype is None and\
-            fileExtension.lower() == ".csv":
-            mntype = "text/csv"
-        elif mntype is None and \
-            fileExtension.lower() == ".sd":
-            mntype = "File/sd"
-        elif mntype is None:
-            #mntype = 'application/octet-stream'
-            mntype= "File/%s" % fileExtension.replace('.', '')
+        if mntype is None:
+            if fileExtension.lower() == ".csv":
+                mntype = "text/csv"
+            elif fileExtension.lower() == ".sd":
+                mntype = "File/sd"
+            else:
+                        #mntype = 'application/octet-stream'
+                mntype = f"File/{fileExtension.replace('.', '')}"
         return mntype
     #----------------------------------------------------------------------
     def _tostr(self,obj):
@@ -278,9 +271,7 @@ class BaseAGOLClass(BaseWebOperations):
         """
         if not obj:
             return ''
-        if isinstance(obj, list):
-            return ', '.join(map(self._tostr, obj))
-        return str(obj)
+        return ', '.join(map(self._tostr, obj)) if isinstance(obj, list) else str(obj)
     #----------------------------------------------------------------------
     def _unicode_convert(self, obj):
         """ converts unicode to anscii """

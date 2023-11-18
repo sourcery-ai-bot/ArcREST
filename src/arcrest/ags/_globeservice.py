@@ -61,10 +61,10 @@ class GlobeServiceLayer(BaseAGSServer):
         self._json = json.dumps(self._json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, v)
+                setattr(self, f"_{k}", v)
             else:
                 print (k, " - attribute not implemented for Globe Service Layer.")
             del k,v
@@ -260,10 +260,10 @@ class GlobeService(BaseAGSServer):
         self._json = json.dumps(self._json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, v)
+                setattr(self, f"_{k}", v)
             else:
                 print (k, " - attribute not implemented for Globe Service.")
     #----------------------------------------------------------------------
@@ -291,10 +291,12 @@ class GlobeService(BaseAGSServer):
             self.__init()
         lyrs = []
         for lyr in self._layers:
-            lyr['object'] = GlobeServiceLayer(url=self._url + "/%s" % lyr['id'],
-                                              securityHandler=self._securityHandler,
-                                              proxy_port=self._proxy_port,
-                                              proxy_url=self._proxy_url)
+            lyr['object'] = GlobeServiceLayer(
+                url=f"{self._url}/{lyr['id']}",
+                securityHandler=self._securityHandler,
+                proxy_port=self._proxy_port,
+                proxy_url=self._proxy_url,
+            )
             lyrs.append(lyr)
 
         return lyrs

@@ -146,17 +146,20 @@ class GeometryFilter(BaseFilter):
                  ):
         """Constructor"""
         self.geometry = geomObject
-        if spatialFilter in self._allowedFilters:
-            self._spatialAction = spatialFilter
-            self._spatialReference = self.geometry.spatialReference
-        else:
-            raise AttributeError("geomObject must be a geometry object and "+ \
-                                 "spatialFilter must be of value: " + \
-                                 "%s" % ", ".join(self._allowedFilters))
-        if not bufferDistance is None and \
-           isinstance(bufferDistance, (int, float)) and \
-           not units is None and \
-           units.lower() in [f.lower() for f in self._allowed_units]:
+        if spatialFilter not in self._allowedFilters:
+            raise AttributeError(
+                "geomObject must be a geometry object and "
+                + "spatialFilter must be of value: "
+                + f'{", ".join(self._allowedFilters)}'
+            )
+        self._spatialAction = spatialFilter
+        self._spatialReference = self.geometry.spatialReference
+        if (
+            bufferDistance is not None
+            and isinstance(bufferDistance, (int, float))
+            and units is not None
+            and units.lower() in [f.lower() for f in self._allowed_units]
+        ):
             self._buffer = bufferDistance
             self._units = units
 
@@ -169,11 +172,12 @@ class GeometryFilter(BaseFilter):
     @spatialRelation.setter
     def spatialRelation(self, value):
         if value.lower() in \
-           [x.lower() for x in self._allowedFilters]:
+               [x.lower() for x in self._allowedFilters]:
             self._spatialAction = value
         else:
-            raise AttributeError("spatialRelation must be values of " + \
-                                 "%s" % ", ".join(self._allowedFilters))
+            raise AttributeError(
+                f'spatialRelation must be values of {", ".join(self._allowedFilters)}'
+            )
     #----------------------------------------------------------------------
     @property
     def geometryType(self):
@@ -248,8 +252,7 @@ class TimeFilter(BaseFilter):
     #----------------------------------------------------------------------
     @property
     def filter(self):
-        if not self._endTime is None:
-            val = "%s, %s" % (self._startTime, self._endTime)
-            return val
+        if self._endTime is not None:
+            return f"{self._startTime}, {self._endTime}"
         else:
-            return "%s" % self._startTime
+            return f"{self._startTime}"

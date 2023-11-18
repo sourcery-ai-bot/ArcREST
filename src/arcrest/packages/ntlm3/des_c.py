@@ -30,8 +30,7 @@ def c2l(c):
 
 def l2c(l):
     "unsigned long to char[4]"
-    c = []
-    c.append(int(l & U32(0xFF)))
+    c = [int(l & U32(0xFF))]
     c.append(int((l >> 8) & U32(0xFF)))
     c.append(int((l >> 16) & U32(0xFF)))
     c.append(int((l >> 24) & U32(0xFF)))
@@ -83,12 +82,7 @@ class DES:
         self.KeySched = des_set_key(key_str)
 
     def decrypt(self, str):
-        # block - UChar[]
-        block = []
-
-        for i in six.iterbytes(str):
-            block.append(i)
-
+        block = list(six.iterbytes(str))
         # print block
         block = des_ecb_encrypt(block, self.KeySched, 0)
 
@@ -99,12 +93,7 @@ class DES:
         return res
 
     def encrypt(self, plaintext):
-        # block - UChar[]
-
-        block = []
-        for i in plaintext:
-            block.append(i)
-
+        block = list(plaintext)
         block = des_ecb_encrypt(block, self.KeySched, 1)
 
         res = b''
@@ -167,8 +156,7 @@ def des_encript(input, ks, encrypt):
     l, r, t = PERM_OP((l, r, t), 16, U32(0x0000ffff))
     r, l, t = PERM_OP((r, l, t), 4, U32(0x0f0f0f0f))
 
-    output = [l]
-    output.append(r)
+    output = [l, r]
     l, r, t, u = U32(0), U32(0), U32(0), U32(0)
     return output
 
@@ -180,10 +168,9 @@ def des_ecb_encrypt(input, ks, encrypt):
     # encrypt - int
 
     # print input
-    l0 = c2l(input[0:4])
+    l0 = c2l(input[:4])
     l1 = c2l(input[4:8])
-    ll = [l0]
-    ll.append(l1)
+    ll = [l0, l1]
     # print ll
     ll = des_encript(ll, ks, encrypt)
     # print ll
@@ -209,7 +196,7 @@ def des_set_key(key):
     # in = key
 
     k = []
-    c = c2l(key[0:4])
+    c = c2l(key[:4])
     d = c2l(key[4:8])
     t = U32(0)
 
@@ -250,6 +237,4 @@ def des_set_key(key):
         s = (s << 4) | (s >> 28)
         k.append(s & U32(0xffffffff))
 
-    schedule = k
-
-    return schedule
+    return k

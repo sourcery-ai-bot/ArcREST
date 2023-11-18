@@ -47,24 +47,17 @@ DESException = 'DESException'
 
 def str_to_key56(key_str):
 
-    if not type(key_str) == six.binary_type:
+    if type(key_str) != six.binary_type:
         # TODO rsanders high - figure out how to make this not necessary
         key_str = key_str.encode('ascii')
 
     if len(key_str) < 7:
         key_str = key_str + b'\000\000\000\000\000\000\000'[:(7 - len(key_str))]
-    key_56 = []
-    for i in six.iterbytes(key_str[:7]):
-        key_56.append(i)
-
-    return key_56
+    return list(six.iterbytes(key_str[:7]))
 
 
 def key56_to_key64(key_56):
-    key = []
-    for i in range(8):
-        key.append(0)
-
+    key = [0 for _ in range(8)]
     key[0] = key_56[0]
     key[1] = ((key_56[0] << 7) & 0xFF) | (key_56[1] >> 1)
     key[2] = ((key_56[1] << 6) & 0xFF) | (key_56[2] >> 2)
@@ -74,9 +67,7 @@ def key56_to_key64(key_56):
     key[6] = ((key_56[5] << 2) & 0xFF) | (key_56[6] >> 6)
     key[7] = (key_56[6] << 1) & 0xFF
 
-    key = set_key_odd_parity(key)
-
-    return key
+    return set_key_odd_parity(key)
 
 
 def set_key_odd_parity(key):

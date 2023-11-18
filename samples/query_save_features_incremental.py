@@ -47,62 +47,50 @@ def trace():
 def main():
     #Path and name of file to store log
     logFile = r"c:\temp\log.log"
-    logFile = common.init_log(logFile)    
+    logFile = common.init_log(logFile)
     try:
         proxy_port = None
         proxy_url = None
-    
-        securityinfo = {}
-        securityinfo['security_type'] = 'Portal'#LDAP, NTLM, OAuth, Portal, PKI
-        securityinfo['username'] = ""#<UserName>
-        securityinfo['password'] = ""#<Password>
-        securityinfo['org_url'] = "http://www.arcgis.com"
-        securityinfo['proxy_url'] = proxy_url
-        securityinfo['proxy_port'] = proxy_port
-        securityinfo['referer_url'] = None
-        securityinfo['token_url'] = None
-        securityinfo['certificatefile'] = None
-        securityinfo['keyfile'] = None
-        securityinfo['client_id'] = None
-        securityinfo['secret_id'] = None
-        
+
+        securityinfo = {
+            'security_type': 'Portal',
+            'username': "",
+            'password': "",
+            'org_url': "http://www.arcgis.com",
+            'proxy_url': proxy_url,
+            'proxy_port': proxy_port,
+            'referer_url': None,
+            'token_url': None,
+            'certificatefile': None,
+            'keyfile': None,
+            'client_id': None,
+            'secret_id': None,
+        }
         #Date time format of the service, example'2016-04-26 04:00:00'
         dateTimeFormat = "%Y/%m/%d %H:%M:%S"
         #log file to store details
-        
+
         print ("###### Date Extraction Process Started ######")
         print ("\tStarted at {0}".format(datetime.datetime.now().strftime(dateTimeFormat)))
-        
+
         fst = featureservicetools.featureservicetools(securityinfo)
-        
+
         """Settings"""
         #URL to service
         url = ''#url to feature layer, make sure it ends in \layer number 
-        
+
         #Base sql expression to find features of a type
         sql = "1=1"
-  
-        #Field used to restrict query to only records since last query
-        statusUpdateField = 'Laststatusupdate'
+
         #Fields to save to the output CSV, format Field1,Field2,...
         out_fields ='OBJECTID,GIS_ID,Nickname'
-    
+
         """The location and file name to save the results to"""
-        #Option are a folder or a GDB
-        outputLocation = r"c:\temp"
-        
-        #Output filename
-        #  Options:
-        #    *.csv - output is a csv file, outputLocation must be a folder
-        #    *.json - output is a json text file, outputLocation must be a folder
-        #    * - output is a Shapefile or GDB featureclass depending on outputLocation
-        outputFileName = "results.csv" 
-        
         #File with the date of the last run, if it does not exist, all features are returned and file is created for next run
         lastRunDetails = r"c:\temp\lastrundate.txt"
-        
+
         lastQueryDate = None
-        
+
         #Open the file with the last run date
         if os.path.isfile(lastRunDetails):
             print("\tLast run file exist")
@@ -110,16 +98,18 @@ def main():
                 lastQueryDate = configFile.read()
                 configFile.close()
             print("\t\tLast query date: {0}".format(lastQueryDate))
-            
+
         #If the last query date file was found and value is a date
         queryDate = datetime.datetime.now().strftime(dateTimeFormat)
         if lastQueryDate is not None and validate(date_text=lastQueryDate, dateTimeFormat=dateTimeFormat):
-            sql = sql + " AND " + statusUpdateField + " >= " + "'" + lastQueryDate + "'"
+            #Field used to restrict query to only records since last query
+            statusUpdateField = 'Laststatusupdate'
+            sql = f"{sql} AND {statusUpdateField} >= '{lastQueryDate}'"
             #Add current time to query
-            sql = sql + " AND " + statusUpdateField + " <= " + "'" + queryDate + "'"
-        
+            sql = f"{sql} AND {statusUpdateField} <= '{queryDate}'"
+
         print("\tSQL: {0}".format(sql))
-        
+
         #query the layer
         featureSet  = fst.QueryAllFeatures(url=url,
                             where=sql,
@@ -131,6 +121,16 @@ def main():
                 print ("\tNo features matching the query where found")
             else:
                 print("\t{0} feature(s) returned".format(len(featureSet.features)))
+                #Option are a folder or a GDB
+                outputLocation = r"c:\temp"
+
+                #Output filename
+                #  Options:
+                #    *.csv - output is a csv file, outputLocation must be a folder
+                #    *.json - output is a json text file, outputLocation must be a folder
+                #    * - output is a Shapefile or GDB featureclass depending on outputLocation
+                outputFileName = "results.csv" 
+
                 #Create a new output writer
                 saveLocation = os.path.join(outputLocation, outputFileName)
                 if (len(featureSet.features) == 0):
@@ -153,7 +153,7 @@ def main():
                         #print ("\t######################")
         else:
             print ("\tNo features matching the query where found")
-                
+
         #Update the last run file
         with open(lastRunDetails, 'w') as configFile:
             configFile.write(queryDate)
@@ -161,18 +161,18 @@ def main():
             print("\t{0} saved to last run file".format(queryDate))
         print ("\tCompleted at {0}".format(datetime.datetime.now().strftime(dateTimeFormat)))
         print ("###### Completed ######")
-    except (common.ArcRestHelperError) as e:
-        print ("error in function: %s" % e[0]['function'])
-        print ("error on line: %s" % e[0]['line'])
-        print ("error in file name: %s" % e[0]['filename'])
-        print ("with error message: %s" % e[0]['synerror'])
+    except common.ArcRestHelperError as e:
+        print(f"error in function: {e[0]['function']}")
+        print(f"error on line: {e[0]['line']}")
+        print(f"error in file name: {e[0]['filename']}")
+        print(f"with error message: {e[0]['synerror']}")
         if 'arcpyError' in e[0]:
-            print ("with arcpy message: %s" % e[0]['arcpyError'])
+            print(f"with arcpy message: {e[0]['arcpyError']}")
     except:
         line, filename, synerror = trace()
-        print ("error on line: %s" % line)
-        print ("error in file name: %s" % filename)
-        print ("with error message: %s" % synerror)
+        print(f"error on line: {line}")
+        print(f"error in file name: {filename}")
+        print(f"with error message: {synerror}")
     finally:
         if (logFile):
             common.close_log(logFile)

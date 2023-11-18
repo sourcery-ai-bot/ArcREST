@@ -18,7 +18,7 @@ def UnicodeDictReader(utf8_data, **kwargs):
     if six.PY3 == True:
         csv_reader = csv.DictReader(utf8_data, **kwargs)
         for row in csv_reader:
-            yield {key: value for key, value in row.items()}
+            yield dict(row.items())
     else:
         csv_reader = csv.DictReader(utf8_data, **kwargs)
         for row in csv_reader:

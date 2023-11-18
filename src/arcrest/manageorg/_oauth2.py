@@ -21,7 +21,7 @@ class oauth2(BaseAGOLClass):
         self._url = oauth_url
         self._proxy_port = proxy_port
         self._securityHandler = securityHandler
-        if not securityHandler is None:
+        if securityHandler is not None:
             self._referer_url = securityHandler.referer_url
         self._proxy_url = proxy_url
     #----------------------------------------------------------------------
@@ -66,7 +66,7 @@ class oauth2(BaseAGOLClass):
                            scheme to deliver the code to.
                            The value is a JSON string array.
         """
-        url = self._url + "/registerApp"
+        url = f"{self._url}/registerApp"
         params = {
             "f" : "json",
             "itemId" : itemId,
@@ -88,7 +88,7 @@ class oauth2(BaseAGOLClass):
         and client_secret respectively.
         Only the app owner has access to the registered app resource.
         """
-        url = self._url + "/app/%s" % clientId
+        url = f"{self._url}/app/{clientId}"
         params = {
             "f" : "json"
         }

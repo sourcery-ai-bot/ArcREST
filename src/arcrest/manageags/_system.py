@@ -25,10 +25,7 @@ class System(BaseAGSServer):
         self._proxy_url = proxy_url
         self._proxy_port = proxy_port
         self._securityHandler = securityHandler
-        if url.lower().endswith("/system"):
-            self._url = url
-        else:
-            self._url = url + "/system"
+        self._url = url if url.lower().endswith("/system") else f"{url}/system"
         if initialize:
             self.__init()
     #----------------------------------------------------------------------
@@ -45,10 +42,10 @@ class System(BaseAGSServer):
         self._json_dict = json_dict
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in System.")
             del k
@@ -68,17 +65,18 @@ class System(BaseAGSServer):
     @property
     def serverProperties(self):
         """gets the server properties for the site as an object"""
-        return ServerProperties(url=self._url + "/properties",
-                                securityHandler=self._securityHandler,
-                                proxy_url=self._proxy_url,
-                               proxy_port=self._proxy_port,
-                               initialize=True)
+        return ServerProperties(
+            url=f"{self._url}/properties",
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+            initialize=True,
+        )
     #----------------------------------------------------------------------
     @property
     def serverDirectories(self):
         """returns the server directory object in a list"""
-        directs = []
-        url = self._url + "/directories"
+        url = f"{self._url}/directories"
         params = {
             "f" : "json"
         }
@@ -87,29 +85,31 @@ class System(BaseAGSServer):
                            securityHandler=self._securityHandler,
                            proxy_url=self._proxy_url,
                            proxy_port=self._proxy_port)
-        for direct in res['directories']:
-            directs.append(
-                ServerDirectory(url=url + "/%s" % direct["name"],
-                                securityHandler=self._securityHandler,
-                                proxy_url=self._proxy_url,
-                                proxy_port=self._proxy_port,
-                                initialize=True))
-        return directs
+        return [
+            ServerDirectory(
+                url=f'{url}/{direct["name"]}',
+                securityHandler=self._securityHandler,
+                proxy_url=self._proxy_url,
+                proxy_port=self._proxy_port,
+                initialize=True,
+            )
+            for direct in res['directories']
+        ]
     #----------------------------------------------------------------------
     @property
     def directories(self):
         """returns the dictionary with all the server directories properties"""
-        url = self._url + "/directories"
+        url = f"{self._url}/directories"
         params = {
             "f" : "json"
         }
-        res = self._get(url=url,
-                        param_dict=params,
-                        securityHandler=self._securityHandler,
-                        proxy_url=self._proxy_url,
-                        proxy_port=self._proxy_port)
-
-        return res
+        return self._get(
+            url=url,
+            param_dict=params,
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
     #----------------------------------------------------------------------
     def registerDirectory(self,name,physicalPath,directoryType,cleanupMode,
                           maxFileAge,description):
@@ -128,7 +128,7 @@ class System(BaseAGSServer):
                             kept before it is deleted (in minutes).
             description - An optional description for the server directory.
         """
-        url = self._url + "/directories/register"
+        url = f"{self._url}/directories/register"
         params = {
             "f" : "json",
             "name" : name,
@@ -139,13 +139,13 @@ class System(BaseAGSServer):
             "description" : description
         }
 
-        res = self._post(url=url,
-                         param_dict=params,
-                         securityHandler=self._securityHandler,
-                         proxy_url=self._proxy_url,
-                         proxy_port=self._proxy_port)
-
-        return res
+        return self._post(
+            url=url,
+            param_dict=params,
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
     #----------------------------------------------------------------------
     def registerDirs(self,json_dirs):
         """
@@ -153,19 +153,19 @@ class System(BaseAGSServer):
         Inputs:
             json_dirs - Array of Server Directories in JSON format.
         """
-        url = self._url + "/directories/registerDirs"
+        url = f"{self._url}/directories/registerDirs"
         params = {
             "f" : "json",
             "directories" : json_dirs
         }
 
-        res = self._post(url=url,
-                         param_dict=params,
-                         securityHandler=self._securityHandler,
-                         proxy_url=self._proxy_url,
-                         proxy_port=self._proxy_port)
-
-        return res
+        return self._post(
+            url=url,
+            param_dict=params,
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
     #----------------------------------------------------------------------
     def recover(self,runAsync=False):
         """
@@ -182,19 +182,19 @@ class System(BaseAGSServer):
            runAsync - default False - Decides if this operation must run
             asynchronously.
         """
-        url = self._url + "/directories/recover"
+        url = f"{self._url}/directories/recover"
         params = {
             "f" : "json",
             "runAsync" : runAsync
         }
 
-        res = self._get(url=url,
-                        param_dict=params,
-                        securityHandler=self._securityHandler,
-                        proxy_url=self._proxy_url,
-                        proxy_port=self._proxy_port)
-
-        return res
+        return self._get(
+            url=url,
+            param_dict=params,
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
     #----------------------------------------------------------------------
     @property
     def licenses(self):
@@ -203,7 +203,7 @@ class System(BaseAGSServer):
         Server and all authorized extensions. Contact Esri Customer Service
         if you have questions about license levels or expiration properties.
         """
-        url = self._url + "/licenses"
+        url = f"{self._url}/licenses"
         params = {
             "f" : "json"
         }
@@ -217,7 +217,7 @@ class System(BaseAGSServer):
     @property
     def Jobs(self):
         """get the Jobs object"""
-        url = self._url + "/jobs"
+        url = f"{self._url}/jobs"
         return Jobs(url=url,
                     securityHandler=self._securityHandler,
                     proxy_url=self._proxy_url,
@@ -234,7 +234,7 @@ class System(BaseAGSServer):
         the configuration web page or the command line utility. For full
         instructions, see Configuring the Web Adaptor after installation.
         """
-        url = self._url + "/webadaptors"
+        url = f"{self._url}/webadaptors"
         params = {
             "f" : "json"
         }
@@ -252,7 +252,7 @@ class System(BaseAGSServer):
         used by all the Web Adaptors to encrypt key data bits in the
         incoming requests to the server.
         """
-        url = self._url + "/webadaptors/config"
+        url = f"{self._url}/webadaptors/config"
         params = {
             "f" : "json"
         }
@@ -271,7 +271,7 @@ class System(BaseAGSServer):
            webAdaptorConfig - the sharedKey attribute must always be
             present in this JSON
         """
-        url = self._url + "/webadaptors/config/update"
+        url = f"{self._url}/webadaptors/config/update"
         params = {
             "f" : "json",
             "webAdaptorConfig" : webAdaptorConfig
@@ -307,7 +307,7 @@ class System(BaseAGSServer):
                             adaptor. If this parameter is not provided, it is
                             derived from the URL.
         """
-        url = self._url + "/webadaptors/register"
+        url = f"{self._url}/webadaptors/register"
         params = {
             "f" : "json",
             "webAdaptorURL" : webAdaptorURL,
@@ -337,7 +337,7 @@ class System(BaseAGSServer):
         Inputs:
            webAdaptorID - id of the web adaptor
         """
-        url = self._url + "/webadaptors/%s/unregister" % webAdaptorID
+        url = f"{self._url}/webadaptors/{webAdaptorID}/unregister"
         params = {
             "f" : "json"
         }
@@ -350,7 +350,7 @@ class System(BaseAGSServer):
     @property
     def configurationStore(self):
         """returns the ConfigurationStore object for this site"""
-        url = self._url + "/configstore"
+        url = f"{self._url}/configstore"
 
         return ConfigurationStore(url=url,
                                   securityHandler=self._securityHandler,
@@ -365,7 +365,7 @@ class System(BaseAGSServer):
         Note: Invoking this operation will cause REST handlers to be
         restarted on all server machines.
         """
-        url = self._url + "/handlers/rest/cache/clear"
+        url = f"{self._url}/handlers/rest/cache/clear"
         params = {
             "f" : "json"
         }
@@ -375,7 +375,6 @@ class System(BaseAGSServer):
                              proxy_port=self._proxy_port,
                              proxy_url=self._proxy_url)
     @property
-    #----------------------------------------------------------------------
     def servicesDirectory(self):
         """
         This resource lists properties related to the HTML view of the ArcGIS
@@ -384,7 +383,7 @@ class System(BaseAGSServer):
         previews at a locally-hosted JavaScript API or map viewer.
         Returns a dictionary with the properties related to Services Directory.
         """
-        url = self._url + "/handlers/rest/servicesdirectory"
+        url = f"{self._url}/handlers/rest/servicesdirectory"
         params = {
             "f" : "json"
         }
@@ -426,7 +425,7 @@ class System(BaseAGSServer):
             servicesDirEnabled - Flag to enable/disable the HTML view of the
                             services directory. Values: true | false
         """
-        url = self._url + "/handlers/rest/servicesdirectory/edit"
+        url = f"{self._url}/handlers/rest/servicesdirectory/edit"
         params["f"] = "json"
         return self._post(url=url,
                           param_dict=params,
@@ -434,13 +433,12 @@ class System(BaseAGSServer):
                           proxy_port=self._proxy_port,
                           proxy_url=self._proxy_url)
     @property
-    #----------------------------------------------------------------------
     def deployment(self):
         """
         Deployment configuration resource that can control
         the load-balancing functionality between GIS server machines.
         """
-        url = self._url + "/deployment"
+        url = f"{self._url}/deployment"
         params = {
             "f" : "json"
         }
@@ -462,7 +460,7 @@ class System(BaseAGSServer):
                                 this property to false. Updating this property
                                 will restart all machines in the site.
         """
-        url = self._url + "/deployment/update"
+        url = f"{self._url}/deployment/update"
         params = {
             "f" : "json",
             "deploymentConfig": singleClusterMode
@@ -513,12 +511,12 @@ class ConfigurationStore(BaseAGSServer):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k == "class":
                 self._class = v
             elif k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in Configuration store.")
             del k
@@ -587,7 +585,7 @@ class ConfigurationStore(BaseAGSServer):
            runAsync - default False - Decides if this operation must run
             asynchronously.
         """
-        url = self._url + "/edit"
+        url = f"{self._url}/edit"
         params = {
             "f" : "json",
             "type" : typeValue,
@@ -617,7 +615,7 @@ class ConfigurationStore(BaseAGSServer):
            runAsync - default False - Decides if this operation must run
             asynchronously.
         """
-        url = self._url + "/recover"
+        url = f"{self._url}/recover"
         params = {
             "f" : "json",
             "runAsync" : runAsync
@@ -670,10 +668,10 @@ class Jobs(BaseAGSServer):
         self._json_dict = json_dict
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in Jobs.")
             del k
@@ -698,7 +696,7 @@ class Jobs(BaseAGSServer):
         Inputs:
            jobId - id of the job
         """
-        url = self._url + "/%s" % jobId
+        url = f"{self._url}/{jobId}"
         params = {
             "f" : "json"
         }
@@ -809,10 +807,7 @@ class ServerProperties(BaseAGSServer):
                  proxy_port=None,
                  initialize=False):
         """Constructor"""
-        if url.lower().endswith('/properties'):
-            self._url = url
-        else:
-            self._url = url + "/properties"
+        self._url = url if url.lower().endswith('/properties') else f"{url}/properties"
         self._securityHandler = securityHandler
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -831,10 +826,10 @@ class ServerProperties(BaseAGSServer):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in ServerProperties.")
             del k
@@ -848,7 +843,7 @@ class ServerProperties(BaseAGSServer):
         """
         This operation allows you to update the server property
         """
-        url = self._url + "/update"
+        url = f"{self._url}/update"
         params = {
             "f" : "json",
             "properties" : properties
@@ -925,10 +920,10 @@ class ServerDirectory(BaseAGSServer):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in ServerDirectory.")
             del k
@@ -1027,7 +1022,7 @@ class ServerDirectory(BaseAGSServer):
             be kept before it is deleted.
            description - An optional description for the server directory
         """
-        url = self._url + "/edit"
+        url = f"{self._url}/edit"
         params = {
             "f" : "json",
             "physicalPath" : physicalPath,
@@ -1051,7 +1046,7 @@ class ServerDirectory(BaseAGSServer):
         directories at regular intervals. However, you can explicitly clean
         the directory by invoking this operation.
         """
-        url = self._url + "/clean"
+        url = f"{self._url}/clean"
         params = {
             "f" : "json"
         }
@@ -1067,7 +1062,7 @@ class ServerDirectory(BaseAGSServer):
         unregistered, it can no longer be referenced (used) from within a
         GIS service.
         """
-        url = self._url + "/unregister"
+        url = f"{self._url}/unregister"
         params = {
             "f" : "json"
         }

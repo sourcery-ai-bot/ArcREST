@@ -46,29 +46,35 @@ class GeoDataService(BaseAGSServer):
         self._json = json.dumps(self._json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
                 if k == "versions" and json_dict[k]:
                     self._versions = []
-                    for version in v:
-                        self._versions.append(
-                            Version(url=self._url + "/versions/%s" % version,
-                                    securityHandler=self._securityHandler,
-                                    proxy_url=self._proxy_url,
-                                    proxy_port=self._proxy_port,
-                                    initialize=False))
+                    self._versions.extend(
+                        Version(
+                            url=f"{self._url}/versions/{version}",
+                            securityHandler=self._securityHandler,
+                            proxy_url=self._proxy_url,
+                            proxy_port=self._proxy_port,
+                            initialize=False,
+                        )
+                        for version in v
+                    )
                 elif k == "replicas" and json_dict[k]:
                     self._replicas = []
-                    for version in v:
-                        self._replicas.append(
-                            Replica(url=self._url + "/replicas/%s" % version,
-                                    securityHandler=self._securityHandler,
-                                    proxy_url=self._proxy_url,
-                                    proxy_port=self._proxy_port,
-                                    initialize=False))
+                    self._replicas.extend(
+                        Replica(
+                            url=f"{self._url}/replicas/{version}",
+                            securityHandler=self._securityHandler,
+                            proxy_url=self._proxy_url,
+                            proxy_port=self._proxy_port,
+                            initialize=False,
+                        )
+                        for version in v
+                    )
                 else:
-                    setattr(self, "_"+ k, v)
+                    setattr(self, f"_{k}", v)
             else:
                 print (k, " - attribute not implemented for GeoData Service")
     #----------------------------------------------------------------------
@@ -142,7 +148,7 @@ class GeoDataService(BaseAGSServer):
                         found by accessing the Geodata Service Replicas
                         resource. """
 
-        url = self._url + "/unRegisterReplica"
+        url = f"{self._url}/unRegisterReplica"
         params = { "f" : "json",
                    "replicaID" : replicaGUID
                  }
@@ -176,7 +182,7 @@ class Version(BaseAGSServer):
         """Constructor"""
         self._url = url
         self._securityHandler = securityHandler
-        if not securityHandler is None:
+        if securityHandler is not None:
             self._referer_url = securityHandler.referer_url
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -194,10 +200,10 @@ class Version(BaseAGSServer):
                                  proxy_port=self._proxy_port)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print (k, " - attribute not implemented in Version.")
             del k,v
@@ -304,7 +310,7 @@ class Replica(BaseAGSServer):
         """Constructor"""
         self._url = url
         self._securityHandler = securityHandler
-        if not securityHandler is None:
+        if securityHandler is not None:
             self._referer_url = securityHandler.referer_url
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -322,10 +328,10 @@ class Replica(BaseAGSServer):
                                  proxy_port=self._proxy_port)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print (k, " - attribute not implemented in Replica.")
             del k, v

@@ -23,7 +23,7 @@ class GPMultiValue(BaseGPObject):
     def __init__(self, gptype):
         """Constructor"""
         self._type = gptype
-        self._dataType = "GPMultiValue:%s" % gptype
+        self._dataType = f"GPMultiValue:{gptype}"
     #----------------------------------------------------------------------
     def __str__(self):
         """returns object as string"""
@@ -53,10 +53,7 @@ class GPMultiValue(BaseGPObject):
         """loads the GP object from a JSON string """
         j = json.loads(value)
         v = GPMultiValue(gptype=j['dataType'])
-        if "defaultValue" in j:
-            v.value = j['defaultValue']
-        else:
-            v.value = j['value']
+        v.value = j['defaultValue'] if "defaultValue" in j else j['value']
         if 'paramName' in j:
             v.paramName = j['paramName']
         elif 'name' in j:
@@ -105,10 +102,7 @@ class GPRecordSet(BaseGPObject):
         """loads the GP object from a JSON string """
         j = json.loads(value)
         v = GPRecordSet()
-        if "defaultValue" in j:
-            v.value = j['defaultValue']
-        else:
-            v.value = j['value']
+        v.value = j['defaultValue'] if "defaultValue" in j else j['value']
         if 'paramName' in j:
             v.paramName = j['paramName']
         elif 'name' in j:
@@ -194,10 +188,7 @@ class GPFeatureRecordSetLayer(BaseGPObject):
         """loads the GP object from a JSON string """
         j = json.loads(value)
         v = GPFeatureRecordSetLayer()
-        if "defaultValue" in j:
-            v.value = j['defaultValue']
-        else:
-            v.value = j['value']
+        v.value = j['defaultValue'] if "defaultValue" in j else j['value']
         if 'paramName' in j:
             v.paramName = j['paramName']
         elif 'name' in j:
@@ -264,10 +255,7 @@ class GPRasterDataLayer(BaseGPObject):
         """loads the GP object from a JSON string """
         j = json.loads(value)
         v = GPRasterDataLayer()
-        if "defaultValue" in j:
-            v.value = j['defaultValue']
-        else:
-            v.value = j['value']
+        v.value = j['defaultValue'] if "defaultValue" in j else j['value']
         if 'paramName' in j:
             v.paramName = j['paramName']
         elif 'name' in j:
@@ -315,10 +303,7 @@ class GPRasterData(BaseGPObject):
         """loads the GP object from a JSON string """
         j = json.loads(value)
         v = GPRasterData()
-        if "defaultValue" in j:
-            v.value = j['defaultValue']
-        else:
-            v.value = j['value']
+        v.value = j['defaultValue'] if "defaultValue" in j else j['value']
         if 'paramName' in j:
             v.paramName = j['paramName']
         elif 'name' in j:
@@ -364,10 +349,7 @@ class GPDataFile(BaseGPObject):
         """loads the GP object from a JSON string """
         j = json.loads(value)
         v = GPDataFile()
-        if "defaultValue" in j:
-            v.value = j['defaultValue']
-        else:
-            v.value = j['value']
+        v.value = j['defaultValue'] if "defaultValue" in j else j['value']
         if 'paramName' in j:
             v.paramName = j['paramName']
         elif 'name' in j:
@@ -414,10 +396,7 @@ class GPLinearUnit(BaseGPObject):
         """loads the GP object from a JSON string """
         j = json.loads(value)
         v = GPLinearUnit()
-        if "defaultValue" in j:
-            v.value = j['defaultValue']
-        else:
-            v.value = j['value']
+        v.value = j['defaultValue'] if "defaultValue" in j else j['value']
         if 'paramName' in j:
             v.paramName = j['paramName']
         elif 'name' in j:
@@ -462,19 +441,11 @@ class GPDate(BaseGPObject):
         """loads the GP object from a JSON string """
         j = json.loads(value)
         v = GPDate()
-        if "defaultValue" in j:
-            v.value = j['defaultValue']
-        else:
-            v.value = j['value']
+        v.value = j['defaultValue'] if "defaultValue" in j else j['value']
         if 'paramName' in j:
             v.paramName = j['paramName']
         elif 'name' in j:
             v.paramName = j['name']
-        #from datetime import datetime
-        #if isinstance(value, datetime):
-            #v.value = local_time_to_online(value)
-        #else:
-            #v.value = value
         #v.paramName = j['paramName']
         return v
 ########################################################################
@@ -514,10 +485,7 @@ class GPBoolean(BaseGPObject):
         """loads the GP object from a JSON string """
         j = json.loads(value)
         v = GPBoolean()
-        if "defaultValue" in j:
-            v.value = j['defaultValue']
-        else:
-            v.value = j['value']
+        v.value = j['defaultValue'] if "defaultValue" in j else j['value']
         if 'paramName' in j:
             v.paramName = j['paramName']
         elif 'name' in j:
@@ -561,10 +529,7 @@ class GPLong(BaseGPObject):
         """loads the GP object from a JSON string """
         j = json.loads(value)
         v = GPLong()
-        if "defaultValue" in j:
-            v.value = j['defaultValue']
-        else:
-            v.value = j['value']
+        v.value = j['defaultValue'] if "defaultValue" in j else j['value']
         if 'paramName' in j:
             v.paramName = j['paramName']
         elif 'name' in j:
@@ -608,10 +573,7 @@ class GPString(BaseGPObject):
         """loads the GP object from a JSON string """
         j = json.loads(value)
         v = GPString()
-        if "defaultValue" in j:
-            v.value = j['defaultValue']
-        else:
-            v.value = j['value']
+        v.value = j['defaultValue'] if "defaultValue" in j else j['value']
         if 'paramName' in j:
             v.paramName = j['paramName']
         elif 'name' in j:
@@ -655,10 +617,7 @@ class GPDouble(BaseGPObject):
         """loads the GP object from a JSON string """
         j = json.loads(value)
         v = GPDouble()
-        if "defaultValue" in j:
-            v.value = j['defaultValue']
-        else:
-            v.value = j['value']
+        v.value = j['defaultValue'] if "defaultValue" in j else j['value']
         if 'paramName' in j:
             v.paramName = j['paramName']
         elif 'name' in j:

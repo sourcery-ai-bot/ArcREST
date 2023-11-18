@@ -24,7 +24,7 @@ class GeometryService(abstract.BaseAGSServer):
         """Constructor"""
         self._url = url
         self._securityHandler = securityHandler
-        if not securityHandler is None:
+        if securityHandler is not None:
             self._referer_url = securityHandler.referer_url
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -125,21 +125,20 @@ class GeometryService(abstract.BaseAGSServer):
            Output:
               JSON as dictionary
         """
-        url = self._url + "/areasAndLengths"
+        url = f"{self._url}/areasAndLengths"
         params = {
             "f" : "json",
             "lengthUnit" : lengthUnit,
             "areaUnit" : {"areaUnit" : areaUnit},
             "calculationType" : calculationType
         }
-        if isinstance(polygons, list) and len(polygons) > 0:
-            p = polygons[0]
-            if isinstance(p, Polygon):
-                params['sr'] = p.spatialReference['wkid']
-                params['polygons'] = [poly.asDictionary for poly in polygons]
-            del p
-        else:
+        if not isinstance(polygons, list) or len(polygons) <= 0:
             return "No polygons provided, please submit a list of polygon geometries"
+        p = polygons[0]
+        if isinstance(p, Polygon):
+            params['sr'] = p.spatialReference['wkid']
+            params['polygons'] = [poly.asDictionary for poly in polygons]
+        del p
         return self._get(url=url, param_dict=params,
                             securityHandler=self._securityHandler,
                             proxy_url=self._proxy_url,
@@ -206,18 +205,14 @@ class GeometryService(abstract.BaseAGSServer):
         """ function to convert the geomtries to strings """
         listGeoms = []
         for g in geometries:
-            if isinstance(g, Point):
+            if isinstance(g, (Point, Polygon)):
                 listGeoms.append(g.asDictionary)
-            elif isinstance(g, Polygon):
-                listGeoms.append(g.asDictionary) #json.dumps(
             elif isinstance(g, Polyline):
                 listGeoms.append({'paths' : g.asDictionary['paths']})
-        if returnType == "str":
+        if returnType == "str" or returnType != "list":
             return json.dumps(listGeoms)
-        elif returnType == "list":
-            return listGeoms
         else:
-            return json.dumps(listGeoms)
+            return listGeoms
     #----------------------------------------------------------------------
     def autoComplete(self,
                      polygons=[],
@@ -235,7 +230,7 @@ class GeometryService(abstract.BaseAGSServer):
               polylines - list of Polyline objects.
               sr - spatial reference of the input geometries WKID.
         """
-        url = self._url + "/autoComplete"
+        url = f"{self._url}/autoComplete"
         params = {"f":"json"}
         if sr is not None:
             params['sr'] = sr
@@ -276,26 +271,25 @@ class GeometryService(abstract.BaseAGSServer):
                             and the unioned geometry is placed in the output array.
              geodesic - set geodesic to true to buffer the using geodesic distance.
         """
-        url = self._url + "/buffer"
+        url = f"{self._url}/buffer"
         params = {
             "f" : "json",
             "inSR" : inSR,
             "geodesic" : geodesic,
             "unionResults" : unionResults
         }
-        if isinstance(geometries, list) and len(geometries) > 0:
-            g = geometries[0]
-            if isinstance(g, Polygon):
-                params['geometries'] = {"geometryType": "esriGeometryPolygon",
-                                        "geometries" : self.__geomToStringArray(geometries, "list")}
-            elif isinstance(g, Point):
-                params['geometries'] = {"geometryType": "esriGeometryPoint",
-                                        "geometries" : self.__geomToStringArray(geometries, "list")}
-            elif isinstance(g, Polyline):
-                params['geometries'] = {"geometryType": "esriGeometryPolyline",
-                                                        "geometries" : self.__geomToStringArray(geometries, "list")}
-        else:
+        if not isinstance(geometries, list) or len(geometries) <= 0:
             return None
+        g = geometries[0]
+        if isinstance(g, Polygon):
+            params['geometries'] = {"geometryType": "esriGeometryPolygon",
+                                    "geometries" : self.__geomToStringArray(geometries, "list")}
+        elif isinstance(g, Point):
+            params['geometries'] = {"geometryType": "esriGeometryPoint",
+                                    "geometries" : self.__geomToStringArray(geometries, "list")}
+        elif isinstance(g, Polyline):
+            params['geometries'] = {"geometryType": "esriGeometryPolyline",
+                                                    "geometries" : self.__geomToStringArray(geometries, "list")}
         if isinstance(distances, list):
             distances = [str(d) for d in distances]
 
@@ -326,28 +320,20 @@ class GeometryService(abstract.BaseAGSServer):
                          objects returned by the ArcGIS REST API).
             sr - spatial reference of the input geometries WKID.
         """
-        url = self._url + "/convexHull"
-        params = {
-            "f" : "json"
-        }
-
-        if isinstance(geometries, list) and len(geometries) > 0:
-            g = geometries[0]
-            if sr is not None:
-                params['sr'] = sr
-            else:
-                params['sr'] = g._wkid
-            if isinstance(g, Polygon):
-                params['geometries'] = {"geometryType": "esriGeometryPolygon",
-                                        "geometries" : self.__geomToStringArray(geometries, "list")}
-            elif isinstance(g, Point):
-                params['geometries'] = {"geometryType": "esriGeometryPoint",
-                                        "geometries" : self.__geomToStringArray(geometries, "list")}
-            elif isinstance(g, Polyline):
-                params['geometries'] = {"geometryType": "esriGeometryPolyline",
-                                                        "geometries" : self.__geomToStringArray(geometries, "list")}
-        else:
+        url = f"{self._url}/convexHull"
+        if not isinstance(geometries, list) or len(geometries) <= 0:
             return None
+        g = geometries[0]
+        params = {"f": "json", 'sr': sr if sr is not None else g._wkid}
+        if isinstance(g, Polygon):
+            params['geometries'] = {"geometryType": "esriGeometryPolygon",
+                                    "geometries" : self.__geomToStringArray(geometries, "list")}
+        elif isinstance(g, Point):
+            params['geometries'] = {"geometryType": "esriGeometryPoint",
+                                    "geometries" : self.__geomToStringArray(geometries, "list")}
+        elif isinstance(g, Polyline):
+            params['geometries'] = {"geometryType": "esriGeometryPolyline",
+                                                    "geometries" : self.__geomToStringArray(geometries, "list")}
         return self._get(url=url,
                             param_dict=params,
                             securityHandler=self._securityHandler,
@@ -371,7 +357,7 @@ class GeometryService(abstract.BaseAGSServer):
                      JSON geometry objects returned by the ArcGIS REST API).
             sr - spatial reference of the input geometries WKID.
         """
-        url = self._url + "/cut"
+        url = f"{self._url}/cut"
         params = {
             "f" : "json"
         }
@@ -423,7 +409,7 @@ class GeometryService(abstract.BaseAGSServer):
             geodesic - if set to true, geodesic distance is used to calculate maxSegmentLength.
             lengthUnit - length unit of maxSegmentLength.
         """
-        url = self._url + "/densify"
+        url = f"{self._url}/densify"
         params = {
             "f" : "json",
             "sr" : sr,
@@ -468,7 +454,7 @@ class GeometryService(abstract.BaseAGSServer):
                        returned by the ArcGIS REST API).
             sr - spatial reference of the input geometries WKID.
         """
-        url = self._url + "/difference"
+        url = f"{self._url}/difference"
         params = {
             "f" : "json",
             "sr" : sr
@@ -484,8 +470,6 @@ class GeometryService(abstract.BaseAGSServer):
                     template['geometryType'] = "esriGeometryPolygon"
                 elif isinstance(g, Point):
                     template['geometryType'] = "esriGeometryPoint"
-                elif isinstance(g, Point):
-                    template['geometryType'] = "esriGeometryMultipoint"
                 else:
                     raise AttributeError("Invalid geometry type")
                 template['geometries'].append(g.asDictionary)
@@ -500,8 +484,6 @@ class GeometryService(abstract.BaseAGSServer):
             geomTemplate['geometryType'] = "esriGeometryPolygon"
         elif isinstance(geometry, Point):
             geomTemplate['geometryType'] = "esriGeometryPoint"
-        elif isinstance(geometry, Point):
-            geomTemplate['geometryType'] = "esriGeometryMultipoint"
         else:
             raise AttributeError("Invalid geometry type")
         geomTemplate['geometry'] = geometry.asDictionary
@@ -531,7 +513,7 @@ class GeometryService(abstract.BaseAGSServer):
                            and geometry2 geometries.
             geodesic - if set to true, geodesic distance is used to calculate maxSegmentLength.
         """
-        url = self._url + "/distance"
+        url = f"{self._url}/distance"
         params = {
             "f" : "json",
             "sr" : sr,
@@ -587,7 +569,7 @@ class GeometryService(abstract.BaseAGSServer):
             "inSR" : inSR,
             "outSR" : outSR
         }
-        url = self._url + "/findTransformations"
+        url = f"{self._url}/findTransformations"
         if isinstance(numOfResults, int):
             params['numOfResults'] = numOfResults
         if isinstance(extentOfInterest, Envelope):
@@ -643,14 +625,14 @@ class GeometryService(abstract.BaseAGSServer):
            utmNorthSouth - Uses north/south latitude indicators instead of
             zone numbers. Non-standard. Default is recommended
         """
-        url = self._url + "/fromGeoCoordinateString"
+        url = f"{self._url}/fromGeoCoordinateString"
         params = {
             "f" : "json",
             "sr" : sr,
             "strings" : strings,
             "conversionType" : conversionType
         }
-        if not conversionMode is None:
+        if conversionMode is not None:
             params['conversionMode'] = conversionMode
         return self._post(url=url, param_dict=params,
                              securityHandler=self._securityHandler,
@@ -679,14 +661,14 @@ class GeometryService(abstract.BaseAGSServer):
             deviationUnit - a unit for maximum deviation. If a unit is not specified, 
                             the units are derived from sr.
         """
-        url = self._url + "/generalize"
+        url = f"{self._url}/generalize"
         params = {
-            "f" : "json",
-            "sr" : sr,
-            "deviationUnit" : deviationUnit,
-            "maxDeviation": maxDeviation
+            "f": "json",
+            "sr": sr,
+            "deviationUnit": deviationUnit,
+            "maxDeviation": maxDeviation,
+            'geometries': self.__geometryListToGeomTemplate(geometries=geometries),
         }
-        params['geometries'] = self.__geometryListToGeomTemplate(geometries=geometries)
         return self._get(url=url, param_dict=params,
                             securityHandler=self._securityHandler,
                             proxy_port=self._proxy_port,
@@ -711,7 +693,7 @@ class GeometryService(abstract.BaseAGSServer):
                        returned by the ArcGIS REST API).
             sr - spatial reference of the input geometries WKID
         """
-        url = self._url + "/intersect"
+        url = f"{self._url}/intersect"
         params = {
             "f" : "json",
             "sr" : sr,
@@ -739,7 +721,7 @@ class GeometryService(abstract.BaseAGSServer):
                        ArcGIS REST API).
             sr - spatial reference of the input geometries WKID.
         """
-        url = self._url + "/labelPoints"
+        url = f"{self._url}/labelPoints"
         params = {
             "f" : "json",
             "sr" : sr,
@@ -773,7 +755,7 @@ class GeometryService(abstract.BaseAGSServer):
         allowedCalcTypes = ['planar', 'geodesic', 'preserveShape']
         if calculationType not in allowedCalcTypes:
             raise AttributeError("Invalid calculation Type")
-        url = self._url + "/lengths"
+        url = f"{self._url}/lengths"
         params = {
             "f" : "json",
             "sr" : sr,
@@ -821,7 +803,7 @@ class GeometryService(abstract.BaseAGSServer):
                       "esriGeometryOffsetMitered"]
         if offsetHow not in allowedHow:
             raise AttributeError("Invalid Offset How value")
-        url = self._url + "/offset"
+        url = f"{self._url}/offset"
         params = {
             "f" : "json",
             "sr" : sr,
@@ -858,7 +840,7 @@ class GeometryService(abstract.BaseAGSServer):
                              to be applied to the projected geometries.
             transformForward - indicating whether or not to transform forward.
         """
-        url = self._url + "/project"
+        url = f"{self._url}/project"
         params = {
             "f" : "json",
             "inSR" : inSR,
@@ -911,7 +893,7 @@ class GeometryService(abstract.BaseAGSServer):
         ]
         if relation not in relationType:
             raise AttributeError("Invalid relation type")
-        url = self._url + "/relation"
+        url = f"{self._url}/relation"
         params = {
             "f" : "json",
             "sr" : sr,
@@ -941,7 +923,7 @@ class GeometryService(abstract.BaseAGSServer):
             reshaper - single-part polyline that does the reshaping.
             sr - spatial reference of the input geometries WKID.
         """
-        url = self._url + "/reshape"
+        url = f"{self._url}/reshape"
         params = {
             "f" : "json",
             "sr" : sr,
@@ -971,7 +953,7 @@ class GeometryService(abstract.BaseAGSServer):
                          objects returned by the ArcGIS REST API)
             sr - spatial reference of the input geometries and output geometries. 
         """
-        url = self._url + "/simplify"
+        url = f"{self._url}/simplify"
         params = {
             "f" : "json",
             "sr" : sr,
@@ -1051,8 +1033,8 @@ class GeometryService(abstract.BaseAGSServer):
             "coordinates" : coordinates,
             "conversionType": conversionType
         }
-        url = self._url + "/toGeoCoordinateString"
-        if not conversionMode is None:
+        url = f"{self._url}/toGeoCoordinateString"
+        if conversionMode is not None:
             params['conversionMode'] = conversionMode
         if isinstance(numOfDigits, int):
             params['numOfDigits'] = numOfDigits
@@ -1091,7 +1073,7 @@ class GeometryService(abstract.BaseAGSServer):
         allowedHow = [0,1,2,4,8,16]
         if extendHow not in allowedHow:
             raise AttributeError("Invalid extend How value.")
-        url = self._url + "/trimExtend"
+        url = f"{self._url}/trimExtend"
         params = {
             "f" : "json",
             "sr" : sr,
@@ -1118,7 +1100,7 @@ class GeometryService(abstract.BaseAGSServer):
                          geometry objects returned by the ArcGIS REST API).
             sr - spatial reference of the input geometries.
         """
-        url = self._url + "/union"
+        url = f"{self._url}/union"
         params = {
             "f" : "json",
             "sr" : sr,

@@ -22,10 +22,7 @@ __all__ = ['_unicode_convert', "Feature", "FeatureSet",
            "online_time_to_string", "timestamp_to_datetime",
            "MosaicRuleObject", "create_uid"]
 def create_uid():
-    if six.PY3:
-        return uuid.uuid4().hex
-    else:
-        return uuid.uuid4().get_hex()
+    return uuid.uuid4().hex if six.PY3 else uuid.uuid4().get_hex()
 def _unicode_convert(obj):
     """ converts unicode to anscii """
     if isinstance(obj, dict):
@@ -42,10 +39,7 @@ def _unicode_convert(obj):
         return obj
 #----------------------------------------------------------------------
 def _date_handler(obj):
-    if isinstance(obj, datetime.datetime):
-        return local_time_to_online(obj)
-    else:
-        return obj
+    return local_time_to_online(obj) if isinstance(obj, datetime.datetime) else obj
 #----------------------------------------------------------------------
 def local_time_to_online(dt=None):
     """
@@ -122,9 +116,9 @@ class Feature(object):
         else:
             raise TypeError("Invalid Input, only dictionary or string allowed")
         if 'geometry' in self._dict:
-            if not wkid is None: # kept for compatibility
+            if wkid is not None: # kept for compatibility
                 self._dict['geometry']['spatialReference']  = {"wkid" : wkid}
-            if not spatialReference is None and isinstance(spatialReference, dict):
+            if spatialReference is not None and isinstance(spatialReference, dict):
                 if 'wkid' in spatialReference:
                     self._wkid = spatialReference['wkid']
                 if 'wkt' in spatialReference:
@@ -136,10 +130,8 @@ class Feature(object):
     def set_value(self, field_name, value):
         """ sets an attribute value for a given field name """
         if field_name in self.fields:
-            if not value is None:
+            if value is not None:
                 self._dict['attributes'][field_name] = _unicode_convert(value)
-            else:
-                pass
         elif field_name.upper() in ['SHAPE', 'SHAPE@', "GEOMETRY"]:
             if isinstance(value, dict):
                 if 'geometry' in value:
@@ -150,7 +142,7 @@ class Feature(object):
                 self._dict['geometry'] = value.asDictionary
             elif arcpyFound:
                 if isinstance(value, arcpy.Geometry) and \
-                   value.type == self.geometryType:
+                       value.type == self.geometryType:
                     self._dict['geometry']=json.loads(value.JSON)
             self._geom = None
             self._geom = self.geometry
@@ -237,10 +229,7 @@ class Feature(object):
     def geometryType(self):
         """ returns the feature's geometry type """
         if self._geomType is None:
-            if self.geometry is not None:
-                self._geomType = self.geometry.type
-            else:
-                self._geomType = "Table"
+            self._geomType = self.geometry.type if self.geometry is not None else "Table"
         return self._geomType
     @staticmethod
     def fc_to_features(dataset):
@@ -251,34 +240,34 @@ class Feature(object):
            Output:
               list of feature objects
         """
-        if arcpyFound:
-            desc = arcpy.Describe(dataset)
-            fields = [field.name for field in arcpy.ListFields(dataset) if field.type not in ['Geometry']]
-            date_fields = [field.name for field in arcpy.ListFields(dataset) if field.type =='Date']
-            non_geom_fields = copy.deepcopy(fields)
-            features = []
-            if hasattr(desc, "shapeFieldName"):
-                fields.append("SHAPE@JSON")
-            del desc
-            with arcpy.da.SearchCursor(dataset, fields) as rows:
-                for row in rows:
-                    row = list(row)
-                    for df in date_fields:
-                        if row[fields.index(df)] != None:
-                            row[fields.index(df)] = int((_date_handler(row[fields.index(df)])))
-                    template = {
-                        "attributes" : dict(zip(non_geom_fields, row))
-                    }
-                    if "SHAPE@JSON" in fields:
-                        template['geometry'] = \
+        if not arcpyFound:
+            return None
+        desc = arcpy.Describe(dataset)
+        fields = [field.name for field in arcpy.ListFields(dataset) if field.type not in ['Geometry']]
+        date_fields = [field.name for field in arcpy.ListFields(dataset) if field.type =='Date']
+        non_geom_fields = copy.deepcopy(fields)
+        features = []
+        if hasattr(desc, "shapeFieldName"):
+            fields.append("SHAPE@JSON")
+        del desc
+        with arcpy.da.SearchCursor(dataset, fields) as rows:
+            for row in rows:
+                row = list(row)
+                for df in date_fields:
+                    if row[fields.index(df)] != None:
+                        row[fields.index(df)] = int((_date_handler(row[fields.index(df)])))
+                template = {
+                    "attributes" : dict(zip(non_geom_fields, row))
+                }
+                if "SHAPE@JSON" in fields:
+                    template['geometry'] = \
                             json.loads(row[fields.index("SHAPE@JSON")])
 
-                    features.append(
-                        Feature(json_string=_unicode_convert(template))
-                    )
-                    del row
-            return features
-        return None
+                features.append(
+                    Feature(json_string=_unicode_convert(template))
+                )
+                del row
+        return features
     #----------------------------------------------------------------------
     def __str__(self):
         """"""
@@ -479,10 +468,12 @@ class MosaicRuleObject(object):
         """
         gets the mosaic rule object as a dictionary
         """
-        if self.mosaicMethod == "esriMosaicNone" or\
-           self.mosaicMethod == "esriMosaicCenter" or \
-           self.mosaicMethod == "esriMosaicNorthwest" or \
-           self.mosaicMethod == "esriMosaicNadir":
+        if self.mosaicMethod in [
+            "esriMosaicNone",
+            "esriMosaicCenter",
+            "esriMosaicNorthwest",
+            "esriMosaicNadir",
+        ]:
             return {
                 "mosaicMethod" : "esriMosaicNone",
                 "where" : self._where,
@@ -598,8 +589,7 @@ class FeatureSet(object):
     #----------------------------------------------------------------------
     def __iter__(self):
         """featureset iterator on features in feature set"""
-        for feature in self._features:
-            yield feature
+        yield from self._features
     #----------------------------------------------------------------------
     def __len__(self):
         """returns the length of features in feature set"""
@@ -610,10 +600,7 @@ class FeatureSet(object):
         """returns a featureset from a JSON string"""
         jd = json.loads(jsonValue)
         features = []
-        if 'fields' in jd:
-            fields = jd['fields']
-        else:
-            fields = {'fields':[]}
+        fields = jd['fields'] if 'fields' in jd else {'fields':[]}
         if 'features' in jd:
             for feat in jd['features']:
                 wkid = None
@@ -653,19 +640,17 @@ class FeatureSet(object):
         elif isinstance(value, int):
             self._spatialReference = SpatialReference(wkid=value)
         elif isinstance(value, str) and \
-             str(value).isdigit():
+                 str(value).isdigit():
             self._spatialReference = SpatialReference(wkid=int(value))
         elif isinstance(value, dict):
             wkid = None
-            wkt = None
             if 'wkid' in value and \
-               str(value['wkid']).isdigit():
+                   str(value['wkid']).isdigit():
                 wkid = int(value['wkid'])
             if 'latestWkid' in value and \
-               str(value['latestWkid']).isdigit():
+                   str(value['latestWkid']).isdigit():
                 wkid = int(value['latestWkid'])
-            if 'wkt' in value:
-                wkt = value['wkt']
+            wkt = value['wkt'] if 'wkt' in value else None
             self._spatialReference = SpatialReference(wkid=wkid,wkt=wkt)
     #----------------------------------------------------------------------
     @property
@@ -758,18 +743,13 @@ class FeatureSet(object):
             with open(res, access, **kwargs) as csvFile:
                 import csv
                 f = csv.writer(csvFile)
-                fields = []
-                #write the headers to the csv
-                for field in self.fields:
-                    fields.append(field['name'])
+                fields = [field['name'] for field in self.fields]
                 f.writerow(fields)
 
                 newRow = []
                 #Loop through the results and save each to a row
                 for feature in self:
-                    newRow = []
-                    for field in self.fields:
-                        newRow.append(feature.get_value(field['name']))
+                    newRow = [feature.get_value(field['name']) for field in self.fields]
                     f.writerow(newRow)
                 csvFile.close()
             del csvFile
@@ -784,7 +764,7 @@ class FeatureSet(object):
 
         else:
             tempDir =  tempfile.gettempdir()
-            tempFile = os.path.join(tempDir, "%s.json" % uuid.uuid4().hex)
+            tempFile = os.path.join(tempDir, f"{uuid.uuid4().hex}.json")
             with open(tempFile, 'wt') as writer:
                 writer.write(self.toJSON)
                 writer.flush()

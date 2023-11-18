@@ -33,12 +33,9 @@ class Content(BaseAGOLClass):
                  proxy_url=None,
                  proxy_port=None):
         """Constructor"""
-        if url.lower().find("/content") < 0:
-            self._url = url + "/content"
-        else:
-            self._url = url
+        self._url = f"{url}/content" if url.lower().find("/content") < 0 else url
         self._securityHandler = securityHandler
-        if not securityHandler is None:
+        if securityHandler is not None:
             self._referer_url = securityHandler.referer_url
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -63,16 +60,18 @@ class Content(BaseAGOLClass):
         """
         Provides access to all user resources
         """
-        return Users(url="%s/users" % self.root,
-                     securityHandler=self._securityHandler,
-                     proxy_url=self._proxy_url,
-                     proxy_port=self._proxy_port)
+        return Users(
+            url=f"{self.root}/users",
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
     #----------------------------------------------------------------------
     def getItem(self, itemId):
         """gets the refernce to the Items class which manages content on a
         given AGOL or Portal site.
         """
-        url = "%s/items/%s" % (self.root, itemId)
+        url = f"{self.root}/items/{itemId}"
         return Item(url=url,
                     securityHandler=self._securityHandler,
                     proxy_url=self._proxy_url,
@@ -82,10 +81,12 @@ class Content(BaseAGOLClass):
     def FeatureContent(self):
         """Feature Content class id the parent resource for feature
         operations such as Analyze and Generate."""
-        return FeatureContent(url="%s/%s" % (self.root, "features"),
-                              securityHandler=self._securityHandler,
-                              proxy_url=self._proxy_url,
-                              proxy_port=self._proxy_port)
+        return FeatureContent(
+            url=f"{self.root}/features",
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
 
     #----------------------------------------------------------------------
     def group(self, groupId):
@@ -101,7 +102,7 @@ class Content(BaseAGOLClass):
         Inputs:
            groupId - unique group identifier
         """
-        url = self._url + "/groups/%s" % groupId
+        url = f"{self._url}/groups/{groupId}"
         return Group(groupId=groupId,
                       contentURL=url,
                       securityHandler=self._securityHandler,
@@ -130,7 +131,7 @@ class Users(BaseAGOLClass):
         """Constructor"""
         self._url = url
         self._securityHandler = securityHandler
-        if not securityHandler is None:
+        if securityHandler is not None:
             self._referer_url = securityHandler.referer_url
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -189,7 +190,7 @@ class Users(BaseAGOLClass):
         if username is None:
             username = self.__getUsername()
 
-        url = "%s/%s" % (self.root, username)
+        url = f"{self.root}/{username}"
         return User(url=url,
                     securityHandler=self._securityHandler,
                     proxy_url=self._proxy_url,
@@ -279,10 +280,10 @@ class Item(BaseAGOLClass):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in Item class.")
 
@@ -502,19 +503,20 @@ class Item(BaseAGOLClass):
         """ URL to the thumbnail used for the item """
         if self._thumbnail is None:
             self.__init()
-        param_dict = {}
-        if  self._thumbnail is not None:
-            imgUrl = self.root + "/info/" + self._thumbnail
+        if self._thumbnail is not None:
+            imgUrl = f"{self.root}/info/{self._thumbnail}"
             onlineFileName, file_ext = splitext(self._thumbnail)
             fileNameSafe = "".join(x for x in fileName if x.isalnum()) + file_ext
-            result = self._get(url=imgUrl,
-                               param_dict=param_dict,
-                               securityHandler=self._securityHandler,
-                               proxy_url=self._proxy_url,
-                               proxy_port=self._proxy_port,
-                               out_folder=filePath,
-                               file_name=fileNameSafe)
-            return result
+            param_dict = {}
+            return self._get(
+                url=imgUrl,
+                param_dict=param_dict,
+                securityHandler=self._securityHandler,
+                proxy_url=self._proxy_url,
+                proxy_port=self._proxy_port,
+                out_folder=filePath,
+                file_name=fileNameSafe,
+            )
         else:
             return None
     #----------------------------------------------------------------------
@@ -675,9 +677,9 @@ class Item(BaseAGOLClass):
     def userItem(self):
         """returns a reference to the UserItem class"""
         if self.ownerFolder is not None:
-            url = "%s/users/%s/%s/items/%s" % (self.root.split('/items/')[0], self.owner,self.ownerFolder, self.id)
+            url = f"{self.root.split('/items/')[0]}/users/{self.owner}/{self.ownerFolder}/items/{self.id}"
         else:
-            url = "%s/users/%s/items/%s" % (self.root.split('/items/')[0], self.owner, self.id)
+            url = f"{self.root.split('/items/')[0]}/users/{self.owner}/items/{self.id}"
         return UserItem(url=url,
                         securityHandler=self._securityHandler,
                         proxy_url=self._proxy_url,
@@ -700,7 +702,7 @@ class Item(BaseAGOLClass):
     @property
     def groups(self):
         """ returns a list of groups the item is shared with. """
-        url = "%s/groups" % self.root
+        url = f"{self.root}/groups"
         params = {
             "f": "json",
         }
@@ -713,7 +715,7 @@ class Item(BaseAGOLClass):
     @property
     def rating(self):
         """ returns the items rating on the portal """
-        url = "%s/rating" % self.root
+        url = f"{self.root}/rating"
         params = {
             "f": "json",
         }
@@ -736,47 +738,86 @@ class Item(BaseAGOLClass):
         params = {
         }
         if f is not None and \
-           f.lower() in ['zip', 'json']:
+               f.lower() in ['zip', 'json']:
             params['f'] = f
-        url = "%s/data" % self.root
-        if self.type in ["Shapefile", "CityEngine Web Scene", "Web Scene", "KML",
-                         "Code Sample",
-                         "Code Attachment", "Operations Dashboard Add In",
-                         "CSV", "CSV Collection", "CAD Drawing", "Service Definition",
-                         "Microsoft Word", "Microsoft Powerpoint",
-                         "Microsoft Excel", "PDF", "Image",
-                         "Visio Document", "iWork Keynote", "iWork Pages",
-                         "iWork Numbers", "Map Document", "Map Package",
-                         "Basemap Package", "Tile Package", "Project Package",
-                         "Task File", "ArcPad Package", "Explorer Map",
-                         "Globe Document", "Scene Document", "Published Map",
-                         "Map Template", "Windows Mobile Package", "Pro Map",
-                         "Layout", "Layer", "Layer Package", "File Geodatabase",
-                         "Explorer Layer", "Geoprocessing Package", "Geoprocessing Sample",
-                         "Locator Package", "Rule Package", "Workflow Manager Package",
-                         "Desktop Application", "Desktop Application Template",
-                         "Code Sample", "Desktop Add In", "Explorer Add In",
-                         "ArcGIS Desktop Add-In", "ArcGIS Explorer Add-In",
-                         "ArcGIS Explorer application configuration", "ArcGIS Explorer document",
-                         ]:
-            if savePath is None:
-                raise AttributeError('savePath must be provided for a item of type: %s' % self.type)
-            if os.path.isdir(savePath) == False:
-                os.makedirs(savePath)
-            result = self._get(url=url,
-                               param_dict=params,
-                               securityHandler=self._securityHandler,
-                               proxy_url=self._proxy_url,
-                               proxy_port=self._proxy_port,
-                               out_folder=savePath,
-                               file_name=self.name)
-            return result
-        else:
-            results =  self._get(url, params,
-                                 proxy_port=self._proxy_port,
-                                 securityHandler=self._securityHandler,
-                                 proxy_url=self._proxy_url)
-            return results
+        url = f"{self.root}/data"
+        if self.type not in [
+            "Shapefile",
+            "CityEngine Web Scene",
+            "Web Scene",
+            "KML",
+            "Code Sample",
+            "Code Attachment",
+            "Operations Dashboard Add In",
+            "CSV",
+            "CSV Collection",
+            "CAD Drawing",
+            "Service Definition",
+            "Microsoft Word",
+            "Microsoft Powerpoint",
+            "Microsoft Excel",
+            "PDF",
+            "Image",
+            "Visio Document",
+            "iWork Keynote",
+            "iWork Pages",
+            "iWork Numbers",
+            "Map Document",
+            "Map Package",
+            "Basemap Package",
+            "Tile Package",
+            "Project Package",
+            "Task File",
+            "ArcPad Package",
+            "Explorer Map",
+            "Globe Document",
+            "Scene Document",
+            "Published Map",
+            "Map Template",
+            "Windows Mobile Package",
+            "Pro Map",
+            "Layout",
+            "Layer",
+            "Layer Package",
+            "File Geodatabase",
+            "Explorer Layer",
+            "Geoprocessing Package",
+            "Geoprocessing Sample",
+            "Locator Package",
+            "Rule Package",
+            "Workflow Manager Package",
+            "Desktop Application",
+            "Desktop Application Template",
+            "Code Sample",
+            "Desktop Add In",
+            "Explorer Add In",
+            "ArcGIS Desktop Add-In",
+            "ArcGIS Explorer Add-In",
+            "ArcGIS Explorer application configuration",
+            "ArcGIS Explorer document",
+        ]:
+            return self._get(
+                url,
+                params,
+                proxy_port=self._proxy_port,
+                securityHandler=self._securityHandler,
+                proxy_url=self._proxy_url,
+            )
+        if savePath is None:
+            raise AttributeError(
+                f'savePath must be provided for a item of type: {self.type}'
+            )
+        if os.path.isdir(savePath) == False:
+            os.makedirs(savePath)
+        return self._get(
+            url=url,
+            param_dict=params,
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+            out_folder=savePath,
+            file_name=self.name,
+        )
     #----------------------------------------------------------------------
     def addRating(self, rating=5.0):
         """Adds a rating to an item between 1.0 and 5.0"""
@@ -784,11 +825,8 @@ class Item(BaseAGOLClass):
             rating = 5.0
         elif rating < 1.0:
             rating = 1.0
-        url = "%s/addRating" % self.root
-        params = {
-            "f": "json",
-            "rating" : "%s" % rating
-        }
+        url = f"{self.root}/addRating"
+        params = {"f": "json", "rating": f"{rating}"}
         return self._post(url,
                              params,
                              proxy_port=self._proxy_port,
@@ -798,7 +836,7 @@ class Item(BaseAGOLClass):
     def deleteRating(self):
         """Removes the rating the calling user added for the specified item
         (POST only)."""
-        url = "%s/deleteRating" % self.root
+        url = f"{self.root}/deleteRating"
         params = {
             "f": "json",
         }
@@ -810,7 +848,7 @@ class Item(BaseAGOLClass):
     #----------------------------------------------------------------------
     def addComment(self, comment):
         """ adds a comment to a given item.  Must be authenticated """
-        url = "%s/addComment" % self.root
+        url = f"{self.root}/addComment"
         params = {
             "f" : "json",
             "comment" : comment
@@ -821,7 +859,7 @@ class Item(BaseAGOLClass):
     #----------------------------------------------------------------------
     def itemComment(self, commentId):
         """ returns details of a single comment """
-        url = "%s/comments/%s" % (self.root, commentId)
+        url = f"{self.root}/comments/{commentId}"
         params = {
             "f": "json"
         }
@@ -834,7 +872,7 @@ class Item(BaseAGOLClass):
     @property
     def itemComments(self):
         """ returns all comments for a given item """
-        url = "%s/comments/" % self.root
+        url = f"{self.root}/comments/"
         params = {
             "f": "json"
         }
@@ -850,7 +888,7 @@ class Item(BaseAGOLClass):
         Inputs:
            commentId - unique id of comment to remove
         """
-        url = "%s/comments/%s/delete" % (self.root, commentId)
+        url = f"{self.root}/comments/{commentId}/delete"
         params = {
             "f": "json",
         }
@@ -889,7 +927,7 @@ class Item(BaseAGOLClass):
         }
         if groups != "" and groups is not None:
             params['groups'] = groups
-        url = "%s/share" % self.root
+        url = f"{self.root}/share"
         res =  self._post(
             url = url,
             securityHandler=self._securityHandler,
@@ -910,7 +948,7 @@ class Item(BaseAGOLClass):
             "f": "json",
             "groups" : groups
         }
-        url = "%s/unshare" % self.root
+        url = f"{self.root}/unshare"
         return self._post(
             url = url,
             param_dict=params,
@@ -920,7 +958,7 @@ class Item(BaseAGOLClass):
     #----------------------------------------------------------------------
     def itemInfoFile(self):
         """  """
-        url = "%s/info/iteminfo.xml" % self.root
+        url = f"{self.root}/info/iteminfo.xml"
         xml = self._get(url=url,
                         param_dict={},
                         securityHandler=self._securityHandler,
@@ -935,15 +973,16 @@ class Item(BaseAGOLClass):
     @property
     def packageInfo(self):
         """gets the item's package information file"""
-        url = "%s/item.pkinfo" % self.root
+        url = f"{self.root}/item.pkinfo"
         params = {'f' : 'json'}
-        result = self._get(url=url,
-                           param_dict=params,
-                           securityHandler=self._securityHandler,
-                           proxy_url=self._proxy_url,
-                           proxy_port=self._proxy_port,
-                           out_folder=tempfile.gettempdir())
-        return result
+        return self._get(
+            url=url,
+            param_dict=params,
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+            out_folder=tempfile.gettempdir(),
+        )
     #----------------------------------------------------------------------
     def metadata(self,
                  exportFormat="default",
@@ -966,17 +1005,14 @@ class Item(BaseAGOLClass):
         Output:
          path to file or string
         """
-        url = "%s/info/metadata/metadata.xml" % self.root
+        url = f"{self.root}/info/metadata/metadata.xml"
         allowedFormats = ["fgdc", "inspire", "iso19139",
                           "iso19139-3.2", "iso19115", "arcgis", "default"]
-        if not exportFormat.lower() in allowedFormats:
+        if exportFormat.lower() not in allowedFormats:
             raise Exception("Invalid exportFormat")
-        if exportFormat.lower() == "arcgis":
-            params = {}
-        else:
-            params = {
-                "format" : exportFormat
-            }
+        params = (
+            {} if exportFormat.lower() == "arcgis" else {"format": exportFormat}
+        )
         if exportFormat.lower() == "default":
             exportFormat = ""
         params = {
@@ -988,28 +1024,27 @@ class Item(BaseAGOLClass):
             saveFolder = tempfile.gettempdir()
         if fileName is None:
             fileName = "metadata.xml"
-        if output is None:
-            result = self._get(url=url,
-                               param_dict=params,
-                               securityHandler=self._securityHandler,
-                               proxy_url=self._proxy_url,
-                               proxy_port=self._proxy_port,
-                               out_folder=saveFolder,
-                               file_name=fileName)
-            if os.path.isfile(result) == False:
-                with open(os.path.join(saveFolder, fileName), 'wb') as writer:
-                    writer.write(result)
-                    writer.flush()
-                    writer.close()
-                return os.path.join(saveFolder, fileName)
-
-            return result
-        else:
+        if output is not None:
             return self._post(url=url,
                                 param_dict=params,
                                 securityHandler=self._securityHandler,
                                 proxy_url=self._proxy_url,
                                 proxy_port=self._proxy_port)
+        result = self._get(url=url,
+                           param_dict=params,
+                           securityHandler=self._securityHandler,
+                           proxy_url=self._proxy_url,
+                           proxy_port=self._proxy_port,
+                           out_folder=saveFolder,
+                           file_name=fileName)
+        if os.path.isfile(result) == False:
+            with open(os.path.join(saveFolder, fileName), 'wb') as writer:
+                writer.write(result)
+                writer.flush()
+                writer.close()
+            return os.path.join(saveFolder, fileName)
+
+        return result
     #----------------------------------------------------------------------
     def deleteInfo(self, infoFile="metadata/metadata.xml"):
         """
@@ -1020,7 +1055,7 @@ class Item(BaseAGOLClass):
         Output:
          dictionary
         """
-        url = "%s/deleteInfo" % self.root
+        url = f"{self.root}/deleteInfo"
         params = {
         "f" : "json",
         "infoFile" : infoFile
@@ -1111,7 +1146,7 @@ class UserItem(BaseAGOLClass):
                  initalize=False):
         """Constructor"""
         self._curl = url
-        self._contentURL = "%s/items/%s" % (url.split('/users/')[0], os.path.basename(url))
+        self._contentURL = f"{url.split('/users/')[0]}/items/{os.path.basename(url)}"
         self._securityHandler = securityHandler
         self._proxy_url = proxy_url
         self._proxy_port = proxy_port
@@ -1132,16 +1167,16 @@ class UserItem(BaseAGOLClass):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k == "item":
                 for key,value in v.items():
                     if key in attributes:
-                        setattr(self, "_" + key, value)
+                        setattr(self, f"_{key}", value)
                     else:
                         print( key, " - attribute not implemented in UserItem class.")
             elif k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in UserItem class.")
     #----------------------------------------------------------------------
@@ -1520,7 +1555,7 @@ class UserItem(BaseAGOLClass):
         params = {
             "f" : "json"
         }
-        url = "%s/delete" % self.root
+        url = f"{self.root}/delete"
         return self._post(
             url = url,
             param_dict=params,
@@ -1548,7 +1583,7 @@ class UserItem(BaseAGOLClass):
             "f" : "json",
             "folder" : folder
         }
-        url = "%s/move" % self.root
+        url = f"{self.root}/move"
         return self._post(
             url = url,
             param_dict=params,
@@ -1565,7 +1600,7 @@ class UserItem(BaseAGOLClass):
         params = {
             "f" : "json"
         }
-        url = "%s/protect" % self.root
+        url = f"{self.root}/protect"
         return self._post(
             url = url,
             securityHandler=self._securityHandler,
@@ -1595,7 +1630,7 @@ class UserItem(BaseAGOLClass):
             "targetUsername" : targetUsername,
             "targetFoldername" : targetFoldername
         }
-        url = "%s/reassign" % self.root
+        url = f"{self.root}/reassign"
         return self._post(
             url = url,
             param_dict=params,
@@ -1626,7 +1661,7 @@ class UserItem(BaseAGOLClass):
         }
         if groups != "" and groups is not None:
             params['groups'] = groups
-        url = "%s/share" % self.root
+        url = f"{self.root}/share"
         return self._post(
             url = url,
             param_dict=params,
@@ -1641,7 +1676,7 @@ class UserItem(BaseAGOLClass):
         params = {
             "f": "json"
         }
-        url = "%s/unprotect" % self.root
+        url = f"{self.root}/unprotect"
         return self._post(
             url = url,
             param_dict=params,
@@ -1663,7 +1698,7 @@ class UserItem(BaseAGOLClass):
             "groups": groups
 
         }
-        url = "%s/unshare" % self.root
+        url = f"{self.root}/unshare"
         return self._post(
             url = url,
             param_dict=params,
@@ -1705,7 +1740,7 @@ class UserItem(BaseAGOLClass):
             params['url'] = serviceUrl
         if text is not None:
             params['text'] = text
-        if isinstance(itemParameters, ItemParameter) == False:
+        if not isinstance(itemParameters, ItemParameter):
             raise AttributeError("itemParameters must be of type parameter.ItemParameter")
         keys_to_delete = ['id', 'owner', 'size', 'numComments',
                           'numRatings', 'avgRating', 'numViews' ,
@@ -1716,9 +1751,7 @@ class UserItem(BaseAGOLClass):
                 del dictItem[key]
 
         for key in dictItem:
-            if key == "thumbnail":
-                files['thumbnail'] = dictItem['thumbnail']
-            elif key == "largeThumbnail":
+            if key == "largeThumbnail":
                 files['largeThumbnail'] = dictItem['largeThumbnail']
             elif key == "metadata":
                 metadata = dictItem['metadata']
@@ -1731,13 +1764,15 @@ class UserItem(BaseAGOLClass):
 
                     metadata = tempxmlfile
                 files['metadata'] = dictItem['metadata']
+            elif key == "thumbnail":
+                files['thumbnail'] = dictItem['thumbnail']
             else:
                 params[key] = dictItem[key]
         if data is not None:
             files['file'] = data
         if metadata and os.path.isfile(metadata):
             files['metadata'] = metadata
-        url = "%s/update" % self.root
+        url = f"{self.root}/update"
         if multipart:
             itemID = self.id
             params['multipart'] = True
@@ -1749,7 +1784,7 @@ class UserItem(BaseAGOLClass):
                              proxy_port=self._proxy_port)
             itemPartJSON = self.addByPart(filePath=data)
             res = self.commit(wait=True, additionalParams=\
-                              {'type' : self.type })
+                                  {'type' : self.type })
 
         else:
             res = self._post(url=url,
@@ -1771,7 +1806,7 @@ class UserItem(BaseAGOLClass):
         Output:
          dictionary
         """
-        url = "%s/deleteInfo" % self.root
+        url = f"{self.root}/deleteInfo"
         params = {
         "f" : "json",
         "infoFile" : infoFile
@@ -1805,7 +1840,7 @@ class UserItem(BaseAGOLClass):
             params['jobType'] = jobType
         if jobId is not None:
             params["jobId"] = jobId
-        url = "%s/status" % self.root
+        url = f"{self.root}/status"
         return self._get(url=url,
                             param_dict=params,
                             securityHandler=self._securityHandler,
@@ -1816,7 +1851,7 @@ class UserItem(BaseAGOLClass):
     def parts(self):
         """if the item is being uploaded by multipart, it will return the name
         of each part for the item."""
-        url = "%s/parts" % self.root
+        url = f"{self.root}/parts"
         params = {"f" : "json"}
         return self._get(url=url,
                             param_dict=params,
@@ -1842,30 +1877,29 @@ class UserItem(BaseAGOLClass):
                               when multipart uploads occur.
         """
 
-        url = "%s/commit" % self.root
+        url = f"{self.root}/commit"
         params = {
             "f" : "json",
         }
         for key, value in additionalParams.items():
             params[key] = value
-        if wait == True:
-            res = self._post(url=url,
-                                param_dict=params,
-                                securityHandler=self._securityHandler,
-                                proxy_port=self._proxy_port,
-                                proxy_url=self._proxy_url)
-            res = self.status()
-            import time
-            while res['status'].lower() in ["partial", "processing"]:
-                time.sleep(2)
-                res = self.status()
-            return res
-        else:
+        if wait != True:
             return self._post(url=url,
                                  param_dict=params,
                                  securityHandler=self._securityHandler,
                                  proxy_port=self._proxy_port,
                                  proxy_url=self._proxy_url)
+        res = self._post(url=url,
+                            param_dict=params,
+                            securityHandler=self._securityHandler,
+                            proxy_port=self._proxy_port,
+                            proxy_url=self._proxy_url)
+        res = self.status()
+        import time
+        while res['status'].lower() in ["partial", "processing"]:
+            time.sleep(2)
+            res = self.status()
+        return res
     #----------------------------------------------------------------------
     def addByPart(self, filePath):
         """
@@ -1907,17 +1941,18 @@ class UserItem(BaseAGOLClass):
                 if not data:
                     break
                 yield data
+
         params = {
         "f" : "json",
         'itemType' : 'file'
         }
-        url = '%s/addPart' % self.root
+        url = f'{self.root}/addPart'
         messages = []
         files = {}
         with open(filePath, 'rb') as f:
             for part_num, piece in enumerate(read_in_chunks(f), start=1):
                 params['partNum'] = part_num
-                tempFile = os.path.join(os.environ['TEMP'], "split.part%s" % part_num)
+                tempFile = os.path.join(os.environ['TEMP'], f"split.part{part_num}")
                 files['file'] =  [tempFile, os.path.basename(filePath)]
                 with open(tempFile, 'wb') as writer:
                     writer.write(piece)
@@ -1967,7 +2002,7 @@ class User(BaseAGOLClass):
         self._location = url
         self._folder = "/"
         self._securityHandler = securityHandler
-        if not securityHandler is None:
+        if securityHandler is not None:
             self._referer_url = securityHandler.referer_url
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -2033,10 +2068,10 @@ class User(BaseAGOLClass):
         self._json = json.dumps(result_template)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
-        for k,v in result_template.items():
+                          not attr.startswith('_')]
+        for k in result_template:
             if k in attributes:
-                setattr(self, "_"+ k, result_template[k])
+                setattr(self, f"_{k}", result_template[k])
             else:
                 print( k, " - attribute not implemented in Content.User class.")
 
@@ -2080,8 +2115,7 @@ class User(BaseAGOLClass):
                             proxy_port=self._proxy_port)
         self._folders = []
         if 'folders' in res:
-            for folder in res['folders']:
-                self._folders.append(folder)
+            self._folders.extend(iter(res['folders']))
         root = {
                 'title': 'root',
                 'id': None,
@@ -2186,7 +2220,7 @@ class User(BaseAGOLClass):
             for folder in self.folders:
                 if 'title' in folder:
                     if folder['title'].lower() == value.lower():
-                        self._location = "%s/%s" % (self.root, folder['id'])
+                        self._location = f"{self.root}/{folder['id']}"
                         self._currentFolder = folder
                         self.__init(folder['title'])
                         break
@@ -2202,16 +2236,16 @@ class User(BaseAGOLClass):
     def items(self):
         '''gets the property value for items'''
         self.__init()
-        items = []
-        for item in self._items:
-            items.append(
-                UserItem(url="%s/items/%s" % (self.location, item['id']),
-                         securityHandler=self._securityHandler,
-                         proxy_url=self._proxy_url,
-                        proxy_port=self._proxy_port,
-                        initalize=True)
+        return [
+            UserItem(
+                url=f"{self.location}/items/{item['id']}",
+                securityHandler=self._securityHandler,
+                proxy_url=self._proxy_url,
+                proxy_port=self._proxy_port,
+                initalize=True,
             )
-        return items
+            for item in self._items
+        ]
     #----------------------------------------------------------------------
     @property
     def start(self):
@@ -2278,7 +2312,7 @@ class User(BaseAGOLClass):
            relationshipType - The type of relationship between the two
                               items. Must be defined in Relationship types.
         """
-        url = "%s/addRelationship" % self.root
+        url = f"{self.root}/addRelationship"
         params = {
             "originItemId" : originItemId,
             "destinationItemId": destinationItemId,
@@ -2308,7 +2342,7 @@ class User(BaseAGOLClass):
                                relationship.
            relationshipType -  type of relationship between the two items.
         """
-        url = "%s/deleteRelationship" % self.root
+        url = f"{self.root}/deleteRelationship"
         params = {
             "f" : "json",
             "originItemId" : originItemId,
@@ -2365,9 +2399,9 @@ class User(BaseAGOLClass):
                           "featureCollection", "fileGeodatabase",
                           "geojson", "scenePackage"]
         if fileType.lower() not in [t.lower() for t in _allowed_types]:
-            raise AttributeError("Invalid fileType: %s" % fileType)
+            raise AttributeError(f"Invalid fileType: {fileType}")
 
-        url = "%s/publish" % self.location
+        url = f"{self.location}/publish"
         params = {
             "f" : "json",
             'fileType': fileType
@@ -2375,8 +2409,9 @@ class User(BaseAGOLClass):
 
         if isinstance(buildIntialCache, bool):
             params['buildInitialCache'] = buildIntialCache
-        if publishParameters is not None and \
-           isinstance(publishParameters, PublishCSVParameters) == False:
+        if publishParameters is not None and not isinstance(
+            publishParameters, PublishCSVParameters
+        ):
             params['publishParameters'] = json.dumps(publishParameters.value)
         elif isinstance(publishParameters, PublishCSVParameters):
             params['publishParameters'] = json.dumps(publishParameters.value)
@@ -2389,8 +2424,7 @@ class User(BaseAGOLClass):
             params['overwrite'] = overwrite
         if filePath is not None:
 
-            files = {}
-            files['file'] = filePath
+            files = {'file': filePath}
             res = self._post(url=url,
                              param_dict=params,
                              files=files,
@@ -2403,41 +2437,42 @@ class User(BaseAGOLClass):
                                  securityHandler=self._securityHandler,
                                  proxy_port=self._proxy_port,
                                  proxy_url=self._proxy_url)
-        if 'services' in res:
-            if len(res['services']) > 0:
-                if 'error' in res['services'][0]:
-                    if 'message' in res['services'][0]['error']:
-                        print(res['services'][0]['error']['message'])
-                    else:
-                        print(res['services'][0]['error'])
-                    raise Exception("Could not publish item: %s" % itemId)
-                else:
-                    itemId = res['services'][0]['serviceItemId']
-                    ui = UserItem(url="%s/items/%s" % (self.location, itemId),
-                                    securityHandler=self._securityHandler,
-                                    proxy_url=self._proxy_url,
-                                    proxy_port=self._proxy_port)
-                    if wait == True:
-                        status = "partial"
-                        while status != "completed":
-                            status = ui.status(jobId=res['services'][0]['jobId'], jobType="publish")
+        if (
+            'services' in res
+            and len(res['services']) > 0
+            and 'error' in res['services'][0]
+        ):
+            if 'message' in res['services'][0]['error']:
+                print(res['services'][0]['error']['message'])
+            else:
+                print(res['services'][0]['error'])
+            raise Exception(f"Could not publish item: {itemId}")
+        elif 'services' in res and len(res['services']) > 0:
+            itemId = res['services'][0]['serviceItemId']
+            ui = UserItem(
+                url=f"{self.location}/items/{itemId}",
+                securityHandler=self._securityHandler,
+                proxy_url=self._proxy_url,
+                proxy_port=self._proxy_port,
+            )
+            if wait == True:
+                status = "partial"
+                while status != "completed":
+                    status = ui.status(jobId=res['services'][0]['jobId'], jobType="publish")
 
-                            if status['status'] == 'failed':
+                    if status['status'] == 'failed':
                                 #if 'statusMessage' in status:
                                     #print( status['statusMessage'])
-                                print (str(status))
-                                raise Exception("Could not publish item: %s" % itemId)
+                        print(status)
+                        raise Exception(f"Could not publish item: {itemId}")
 
-                            elif status['status'].lower() == "completed":
-                                break
-                            time.sleep(2)
-                    return ui
-            else:
-                print (res)
-                raise Exception("Could not publish item: %s" % itemId)
+                    elif status['status'].lower() == "completed":
+                        break
+                    time.sleep(2)
+            return ui
         else:
             print (res)
-            raise Exception("Could not publish item: %s" % itemId)
+            raise Exception(f"Could not publish item: {itemId}")
         return None
 
     #----------------------------------------------------------------------
@@ -2475,7 +2510,7 @@ class User(BaseAGOLClass):
            else:
               job id for the export item.
         """
-        url = "%s/export" % self.location
+        url = f"{self.location}/export"
         params = {
             "f" : "json",
             "title" : title,
@@ -2492,24 +2527,23 @@ class User(BaseAGOLClass):
                             securityHandler=self._securityHandler,
                             proxy_port=self._proxy_port,
                             proxy_url=self._proxy_url)
-        itemURL = "%s/items/%s" % (self.location, res['exportItemId'])
+        itemURL = f"{self.location}/items/{res['exportItemId']}"
         if self.currentFolder is not None or self.currentFolder['title'] != "root":
             self.moveItems(items=res['exportItemId'], folder=self.currentFolder['id'])
         ui = UserItem(url=itemURL,
                       securityHandler=self._securityHandler,
                       proxy_url=self._proxy_url,
                       proxy_port=self._proxy_port)
-        if wait == True:
-            status = "partial"
-            while status != "completed":
-                status = ui.status(jobId=res['jobId'], jobType="export")
-                if status['status'] == 'failed':
-                    raise Exception("Could not export item: %s" % itemId)
-                elif status['status'].lower() == "completed":
-                    break
-                time.sleep(2)
-        else:
+        if wait != True:
             return res['jobId'], ui
+        status = "partial"
+        while status != "completed":
+            status = ui.status(jobId=res['jobId'], jobType="export")
+            if status['status'] == 'failed':
+                raise Exception(f"Could not export item: {itemId}")
+            elif status['status'].lower() == "completed":
+                break
+            time.sleep(2)
         return ui
     #----------------------------------------------------------------------
     def createService(self, createServiceParameter,
@@ -2524,7 +2558,7 @@ class User(BaseAGOLClass):
         Inputs:
            createServiceParameter - create service object
         """
-        url = "%s/createService" % self.location
+        url = f"{self.location}/createService"
         val = createServiceParameter.value
         params = {
             "f" : "json",
@@ -2541,12 +2575,12 @@ class User(BaseAGOLClass):
                              securityHandler=self._securityHandler,
                              proxy_port=self._proxy_port,
                              proxy_url=self._proxy_url)
-        if 'id' in res or \
-           'serviceItemId' in res:
-            if 'id' in res:
-                url = "%s/items/%s" % (self.location, res['id'])
-            else:
-                url = "%s/items/%s" % (self.location, res['serviceItemId'])
+        if 'id' in res or 'serviceItemId' in res:
+            url = (
+                f"{self.location}/items/{res['id']}"
+                if 'id' in res
+                else f"{self.location}/items/{res['serviceItemId']}"
+            )
             return UserItem(url=url,
                             securityHandler=self._securityHandler,
                             proxy_url=self._proxy_url,
@@ -2563,24 +2597,21 @@ class User(BaseAGOLClass):
 
 
         """
-        if self.currentFolder is not None and \
-           self.currentFolder['id'] != None:
-            url = "%s/delete" % self.location
-            params = {
-                "f" : "json"
-            }
-            res = self._post(url=url,
-                                 param_dict=params,
-                                 securityHandler=self._securityHandler,
-                                 proxy_port=self._proxy_port,
-                                 proxy_url=self._proxy_url)
-            self._folders = None
-            self.currentFolder = None
-            self.refresh
-            return res
-
-        else:
+        if self.currentFolder is None or self.currentFolder['id'] is None:
             return "Cannot delete root folder."
+        url = f"{self.location}/delete"
+        params = {
+            "f" : "json"
+        }
+        res = self._post(url=url,
+                             param_dict=params,
+                             securityHandler=self._securityHandler,
+                             proxy_port=self._proxy_port,
+                             proxy_url=self._proxy_url)
+        self._folders = None
+        self.currentFolder = None
+        self.refresh
+        return res
     #----------------------------------------------------------------------
     def shareItems(self, items, groups="", everyone=False,
                    org=False):
@@ -2597,7 +2628,7 @@ class User(BaseAGOLClass):
            items - comma seperated list of items to share
            groups - comma sperated list of groups to share with
         """
-        url = "%s/shareItems" % self.root
+        url = f"{self.root}/shareItems"
         params = {
             "f" : "json",
             "items" : items,
@@ -2619,7 +2650,7 @@ class User(BaseAGOLClass):
            items - comma-seperated list of items to unshare
            groups - comma-seperated list of groups to not share items with
         """
-        url = "%s/unshareItems" % self.root
+        url = f"{self.root}/unshareItems"
         params = {
             "f" : "json",
             "items" : items,
@@ -2640,7 +2671,7 @@ class User(BaseAGOLClass):
            items - comma-seperated list of items to move
            folder - destination folder id. "/" means root
         """
-        url = "%s/moveItems" % self.root
+        url = f"{self.root}/moveItems"
         params = {
             "f" : "json",
             "items" : items,
@@ -2660,7 +2691,7 @@ class User(BaseAGOLClass):
         Inputs:
            items - A comma separated list of items to be deleted.
         """
-        url = "%s/deleteItems" % self.root
+        url = f"{self.root}/deleteItems"
         params = {
             "f" : "json",
             "items" : items
@@ -2677,7 +2708,7 @@ class User(BaseAGOLClass):
         visible to a user and solely used for organizing content within
         that user's content space.
         """
-        url = "%s/createFolder" % self.root
+        url = f"{self.root}/createFolder"
         params = {
             "f" : "json",
             "title" : name
@@ -2699,7 +2730,7 @@ class User(BaseAGOLClass):
         Output:
            UserItem class
         """
-        url = self._location + "/addItem"
+        url = f"{self._location}/addItem"
         params = {
             "f": "json",
             'multipart' : 'true',
@@ -2710,7 +2741,7 @@ class User(BaseAGOLClass):
                          securityHandler=self._securityHandler)
         if 'id' in res:
             itemID = res['id']
-            iUrl = "%s/items/%s" % (self.location, itemID)
+            iUrl = f"{self.location}/items/{itemID}"
             ui = UserItem(url=iUrl,
                           securityHandler=self._securityHandler,
                           proxy_url=self._proxy_url,
@@ -2733,10 +2764,7 @@ class User(BaseAGOLClass):
                    'f': 'json'}
             for k,v in itemParameters.value.items():
                 if k not in data.keys():
-                    if isinstance(v, bool):
-                        data[k] = json.dumps(v)
-                    else:
-                        data[k] = v
+                    data[k] = json.dumps(v) if isinstance(v, bool) else v
             res = self._post(url=update_url,
                              param_dict=data,
                             securityHandler=self._securityHandler)
@@ -2801,10 +2829,7 @@ class User(BaseAGOLClass):
         res = ""
         if itemParameters is not None:
             for k,v in itemParameters.value.items():
-                if isinstance(v, bool):
-                    params[k] = json.dumps(v)
-                else:
-                    params[k] = v
+                params[k] = json.dumps(v) if isinstance(v, bool) else v
         if itemParameters.overwrite is not None:
             params['overwrite'] = json.dumps(overwrite)
         if itemParameters.overwrite != overwrite:
@@ -2823,27 +2848,28 @@ class User(BaseAGOLClass):
             params['destinationItemId'] = destinationItemId
         if serviceProxyParams is not None:
             params['serviceProxyParams'] = serviceProxyParams
-        url = "%s/addItem" % self.location
+        url = f"{self.location}/addItem"
         files = {}
         if multipart:
             res = self._addItemMultiPart(
                 itemParameters=itemParameters,
                 filePath=filePath)
         else:
-            if filePath is not None and os.path.isfile(filePath):
-                files['file'] = filePath
-                params["filename"] = os.path.basename(filePath)
-            elif filePath is not None and multipart:
-                params["filename"] = os.path.basename(filePath)
-            elif filePath is not None and not os.path.isfile(filePath):
-                print ("{0} not found".format(filePath))
+            if filePath is not None:
+                if os.path.isfile(filePath):
+                    files['file'] = filePath
+                    params["filename"] = os.path.basename(filePath)
+                elif multipart:
+                    params["filename"] = os.path.basename(filePath)
+                elif not os.path.isfile(filePath):
+                    print ("{0} not found".format(filePath))
             if 'thumbnail' in params:
                 v = params['thumbnail']
                 del params['thumbnail']
                 files['thumbnail'] = v
             if metadata is not None and os.path.isfile(metadata):
                 files['metadata'] = metadata
-            if len(files) < 1:
+            if not files:
                 res = self._post(url,
                                  param_dict=params,
                                  securityHandler=self._securityHandler,
@@ -2859,19 +2885,21 @@ class User(BaseAGOLClass):
                                  proxy_url=self._proxy_url,
                                  proxy_port=self._proxy_port)
         if (isinstance(res, dict) and \
-           "id" not in res):
-            raise Exception("Cannot add the item: %s" % res)
+               "id" not in res):
+            raise Exception(f"Cannot add the item: {res}")
         elif (isinstance(res, (UserItem, Item)) and \
-              res.id is None):
-            raise Exception("Cannot add the item: %s" % str(res))
+                  res.id is None):
+            raise Exception(f"Cannot add the item: {str(res)}")
         elif isinstance(res, (UserItem, Item)):
             return res
         else:
             itemId = res['id']
-            return UserItem(url="%s/items/%s" % (self.location, itemId),
-                            securityHandler=self._securityHandler,
-                        proxy_url=self._proxy_url,
-                        proxy_port=self._proxy_port)
+            return UserItem(
+                url=f"{self.location}/items/{itemId}",
+                securityHandler=self._securityHandler,
+                proxy_url=self._proxy_url,
+                proxy_port=self._proxy_port,
+            )
 ########################################################################
 class FeatureContent(BaseAGOLClass):
     """
@@ -2887,12 +2915,9 @@ class FeatureContent(BaseAGOLClass):
                  proxy_url=None,
                  proxy_port=None):
         """Constructor"""
-        if url.lower().find("/features") < 0:
-            self._url = url + "/features"
-        else:
-            self._url = url
+        self._url = f"{url}/features" if url.lower().find("/features") < 0 else url
         self._securityHandler = securityHandler
-        if not securityHandler is None:
+        if securityHandler is not None:
             self._referer_url = securityHandler.referer_url
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -2940,19 +2965,14 @@ class FeatureContent(BaseAGOLClass):
                                geocoding information
         """
         files = []
-        url = self._url + "/analyze"
-        params = {
-            "f" : "json"
-
-        }
+        url = f"{self._url}/analyze"
         fileType = "csv"
-        params["fileType"] = fileType
+        params = {"f": "json", "fileType": fileType}
         if analyzeParameters is not None and\
-           isinstance(analyzeParameters, AnalyzeParameters):
+               isinstance(analyzeParameters, AnalyzeParameters):
             params['analyzeParameters'] = analyzeParameters.value
 
-        if not (filePath is None) and \
-           os.path.isfile(filePath):
+        if filePath is not None and os.path.isfile(filePath):
             params['text'] = open(filePath, 'rb').read()
             return self._post(url=url, param_dict=params,
                                  securityHandler=self._securityHandler,

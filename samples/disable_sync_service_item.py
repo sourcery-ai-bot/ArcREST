@@ -38,11 +38,12 @@ def trace():
     return line, filename, synerror
 
 def main():
-    securityinfo = {}
-    securityinfo['security_type'] = 'Portal'
-    securityinfo['username'] = ""
-    securityinfo['password'] = ""
-    securityinfo['org_url'] = "http://www.arcgis.com"
+    securityinfo = {
+        'security_type': 'Portal',
+        'username': "",
+        'password': "",
+        'org_url': "http://www.arcgis.com",
+    }
     try:
         fst = featureservicetools.featureservicetools(securityinfo=securityinfo)
         fs = fst.GetFeatureService(itemId='',returnURLOnly=False)
@@ -52,9 +53,9 @@ def main():
 
     except:
         line, filename, synerror = trace()
-        print ("error on line: %s" % line)
-        print ("error in file name: %s" % filename)
-        print ("with error message: %s" % synerror)
+        print(f"error on line: {line}")
+        print(f"error in file name: {filename}")
+        print(f"with error message: {synerror}")
 
     finally:
         print (datetime.datetime.now().strftime(dateTimeFormat))

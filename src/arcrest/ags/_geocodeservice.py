@@ -61,10 +61,10 @@ class GeocodeService(BaseAGSServer):
         self._json = json.dumps(self._json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, v)
+                setattr(self, f"_{k}", v)
             else:
                 print (k, " - attribute not implemented for Geocode Service")
     #----------------------------------------------------------------------
@@ -220,45 +220,43 @@ class GeocodeService(BaseAGSServer):
             results, in a database for example, you need to set this
             parameter to true.
         """
-        if isinstance(self._securityHandler, (AGOLTokenSecurityHandler, OAuthSecurityHandler)):
-            url = self._url + "/find"
-            params = {
-                "f" : "json",
-                "text" : text,
-                #"token" : self._securityHandler.token
-            }
-            if not magicKey is None:
-                params['magicKey'] = magicKey
-            if not sourceCountry is None:
-                params['sourceCountry'] = sourceCountry
-            if not bbox is None:
-                params['bbox'] = bbox
-            if not location is None:
-                if isinstance(location, Point):
-                    params['location'] = location.asDictionary
-                if isinstance(location, list):
-                    params['location'] = "%s,%s" % (location[0], location[1])
-                if not distance is None:
-                    params['distance'] = distance
-            if not outSR is None:
-                params['outSR'] = outSR
-            if not category is None:
-                params['category'] = category
-            if outFields is None:
-                params['outFields'] = "*"
-            else:
-                params['outFields'] = outFields
-            if not maxLocations is None:
-                params['maxLocations'] = maxLocations
-            if not forStorage is None:
-                params['forStorage'] = forStorage
-            return self._post(url=url,
-                                 param_dict=params,
-                                 securityHandler=self._securityHandler,
-                                 proxy_url=self._proxy_url,
-                                 proxy_port=self._proxy_port)
-        else:
+        if not isinstance(
+            self._securityHandler, (AGOLTokenSecurityHandler, OAuthSecurityHandler)
+        ):
             raise Exception("This function works on the ArcGIS Online World Geocoder")
+        url = f"{self._url}/find"
+        params = {
+            "f" : "json",
+            "text" : text,
+            #"token" : self._securityHandler.token
+        }
+        if magicKey is not None:
+            params['magicKey'] = magicKey
+        if sourceCountry is not None:
+            params['sourceCountry'] = sourceCountry
+        if bbox is not None:
+            params['bbox'] = bbox
+        if location is not None:
+            if isinstance(location, Point):
+                params['location'] = location.asDictionary
+            if isinstance(location, list):
+                params['location'] = f"{location[0]},{location[1]}"
+            if distance is not None:
+                params['distance'] = distance
+        if outSR is not None:
+            params['outSR'] = outSR
+        if category is not None:
+            params['category'] = category
+        params['outFields'] = "*" if outFields is None else outFields
+        if maxLocations is not None:
+            params['maxLocations'] = maxLocations
+        if forStorage is not None:
+            params['forStorage'] = forStorage
+        return self._post(url=url,
+                             param_dict=params,
+                             securityHandler=self._securityHandler,
+                             proxy_url=self._proxy_url,
+                             proxy_port=self._proxy_port)
     #----------------------------------------------------------------------
     def findAddressCandidates(self,
                               addressDict=None,
@@ -385,34 +383,34 @@ class GeocodeService(BaseAGSServer):
             category - The category parameter is only supported by geocode
              services published using StreetMap Premium locators.
         """
-        url = self._url + "/findAddressCandidates"
+        url = f"{self._url}/findAddressCandidates"
         params = {
             "f" : "json",
             "distance" : distance
         }
         if addressDict is None and \
-           singleLine is None:
+               singleLine is None:
             raise Exception("A singleline address or an address dictionary must be passed into this function")
-        if not magicKey is None:
+        if magicKey is not None:
             params['magicKey'] = magicKey
-        if not category is None:
+        if category is not None:
             params['category'] = category
-        if not addressDict is None:
+        if addressDict is not None:
             params = params.update(addressDict)
-        if not singleLine is None:
+        if singleLine is not None:
             params['SingleLine'] = singleLine
-        if not maxLocations is None:
+        if maxLocations is not None:
             params['maxLocations'] = maxLocations
-        if not outFields is None:
+        if outFields is not None:
             params['outFields'] = outFields
-        if not outSR is None:
+        if outSR is not None:
             params['outSR'] = {"wkid": outSR}
-        if not searchExtent is None:
+        if searchExtent is not None:
             params['searchExtent'] = searchExtent
         if isinstance(location, Point):
             params['location'] = location.asDictionary
         elif isinstance(location, list):
-            params['location'] = "%s,%s" % (location[0], location[1])
+            params['location'] = f"{location[0]},{location[1]}"
         return self._get(url=url,
                              param_dict=params,
                              securityHandler=self._securityHandler,
@@ -476,14 +474,14 @@ class GeocodeService(BaseAGSServer):
            category - The category parameter is only supported by geocode
             services published using StreetMap Premium locators.
         """
+        url = f"{self._url}/geocodeAddresses"
         params = {
-            "f" : "json"
+            "f": "json",
+            'outSR': outSR,
+            'sourceCountry': sourceCountry,
+            'category': category,
+            'addresses': addresses,
         }
-        url = self._url + "/geocodeAddresses"
-        params['outSR'] = outSR
-        params['sourceCountry'] = sourceCountry
-        params['category'] = category
-        params['addresses'] = addresses
         return self._post(url=url,
                              param_dict=params,
                              securityHandler=self._securityHandler,
@@ -504,11 +502,11 @@ class GeocodeService(BaseAGSServer):
         params = {
             "f" : "json"
         }
-        url = self._url + "/reverseGeocode"
+        url = f"{self._url}/reverseGeocode"
         if isinstance(location, Point):
             params['location'] = location.asDictionary
         elif isinstance(location, list):
-            params['location'] = "%s,%s" % (location[0], location[1])
+            params['location'] = f"{location[0]},{location[1]}"
         else:
             raise Exception("Invalid location")
         return self._post(url=url,
@@ -583,17 +581,16 @@ class GeocodeService(BaseAGSServer):
             "f" : "json",
             "text" : text
         }
-        url = self._url + "/suggest"
+        url = f"{self._url}/suggest"
         if isinstance(location, Point):
             params['location'] = location.asDictionary
         elif isinstance(location, list):
-            params['location'] = "%s,%s" % (location[0], location[1])
+            params['location'] = f"{location[0]},{location[1]}"
         else:
             raise Exception("Invalid location, please try again")
-        if not category is None:
+        if category is not None:
             params['category'] = category
-        if not distance is None and \
-           isinstance(distance, (int, float)):
+        if distance is not None and isinstance(distance, (int, float)):
             params['distance'] = distance
         return self._post(url=url,
                              param_dict=params,

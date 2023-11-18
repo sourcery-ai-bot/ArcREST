@@ -5,6 +5,7 @@
    Python 2/3
    ArcREST version 3.5.x
 """
+
 from __future__ import print_function
 import arcrest
 from arcrest.security import AGOLTokenSecurityHandler
@@ -46,14 +47,21 @@ if __name__ == "__main__":
         user = admin.content.users.user(commUser.username)
         for userItem in user.items:
 
-            msg = "Item: {0}".format(userItem.id)
-            msg = msg +  "\n\tName: {0}".format(userItem.name)
-            msg = msg +  "\n\tTitle: {0}".format(userItem.title)
-            msg = msg +  "\n\tType: {0}".format(userItem.type)
-            msg = msg +  "\n\tOwned by: {0}".format(commUser.username)
-            msg = msg +  "\n\tCreated on: {0}".format(arcrest.general.online_time_to_string(userItem.created,datetimeformat))
-            msg = msg +  "\n\tLast modified on: {0}".format(arcrest.general.online_time_to_string(userItem.modified,datetimeformat))
-            msg = msg +  "\n\tTotal Views: {0}".format(userItem.numViews)
+            msg = "Item: {0}".format(userItem.id) + "\n\tName: {0}".format(userItem.name)
+            msg += "\n\tTitle: {0}".format(userItem.title)
+            msg += "\n\tType: {0}".format(userItem.type)
+            msg += "\n\tOwned by: {0}".format(commUser.username)
+            msg += "\n\tCreated on: {0}".format(
+                arcrest.general.online_time_to_string(
+                    userItem.created, datetimeformat
+                )
+            )
+            msg += "\n\tLast modified on: {0}".format(
+                arcrest.general.online_time_to_string(
+                    userItem.modified, datetimeformat
+                )
+            )
+            msg += "\n\tTotal Views: {0}".format(userItem.numViews)
 
             if createUsage:
                 params['name'] = userItem.id
@@ -71,8 +79,8 @@ if __name__ == "__main__":
                 else:
                     print(usage['error'])
 
-                msg = msg +  "\n\tTimestamped Views: {0}".format(views)
+                msg += "\n\tTimestamped Views: {0}".format(views)
 
-            msg = msg +  "\n----------------------------------------------------------"
+            msg += "\n----------------------------------------------------------"
             print (msg)
 

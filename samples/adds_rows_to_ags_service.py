@@ -30,23 +30,23 @@ def main():
     proxy_port = None
     proxy_url = None
 
-    securityinfo = {}
-    securityinfo['security_type'] = 'AGS'
-    securityinfo['username'] = ""#<UserName>
-    securityinfo['password'] = ""#<Password>
-    securityinfo['org_url'] = ""#<ArcGIS Server URL, ex: https://myserver/arcgis
-    securityinfo['proxy_url'] = proxy_url
-    securityinfo['proxy_port'] = proxy_port
-    securityinfo['referer_url'] = None
-    securityinfo['token_url'] = None
-    securityinfo['certificatefile'] = None
-    securityinfo['keyfile'] = None
-    securityinfo['client_id'] = None
-    securityinfo['secret_id'] = None
-    
+    securityinfo = {
+        'security_type': 'AGS',
+        'username': "",
+        'password': "",
+        'org_url': "",
+        'proxy_url': proxy_url,
+        'proxy_port': proxy_port,
+        'referer_url': None,
+        'token_url': None,
+        'certificatefile': None,
+        'keyfile': None,
+        'client_id': None,
+        'secret_id': None,
+    }
     pathToFeatureClass = r""#local path to feature class to load
     fs_url = ''#url to layer, not service, make sure it ends with a \Number
-    
+
     try:
 
         fst = featureservicetools.featureservicetools(securityinfo)
@@ -56,20 +56,20 @@ def main():
             results =  fst.AddFeaturesToFeatureLayer(url=fs_url, pathToFeatureClass=pathToFeatureClass,
                                                       chunksize=2000)
             if 'addResults' in results:
-                print ("%s features processed" % len(results['addResults']))
-    except (common.ArcRestHelperError) as e:
-        print ("error in function: %s" % e[0]['function'])
-        print ("error on line: %s" % e[0]['line'])
-        print ("error in file name: %s" % e[0]['filename'])
-        print ("with error message: %s" % e[0]['synerror'])
+                print(f"{len(results['addResults'])} features processed")
+    except common.ArcRestHelperError as e:
+        print(f"error in function: {e[0]['function']}")
+        print(f"error on line: {e[0]['line']}")
+        print(f"error in file name: {e[0]['filename']}")
+        print(f"with error message: {e[0]['synerror']}")
         if 'arcpyError' in e[0]:
-            print ("with arcpy message: %s" % e[0]['arcpyError'])
+            print(f"with arcpy message: {e[0]['arcpyError']}")
 
     except:
         line, filename, synerror = trace()
-        print ("error on line: %s" % line)
-        print ("error in file name: %s" % filename)
-        print ("with error message: %s" % synerror)
+        print(f"error on line: {line}")
+        print(f"error in file name: {filename}")
+        print(f"with error message: {synerror}")
 
 if __name__ == "__main__":
     main()

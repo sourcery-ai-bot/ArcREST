@@ -43,10 +43,10 @@ class Log(BaseAGSServer):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                     if not attr.startswith('__') and \
-                    not attr.startswith('_')]
+                        not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in Logs.")
             del k
@@ -85,22 +85,26 @@ class Log(BaseAGSServer):
             "f": "json",
             "machine" : machine
         }
-        return self._post(url=self._url + "/countErrorReports",
-                            param_dict=params,
-                            securityHandler=self._securityHandler,
-                            proxy_url=self._proxy_url,
-                            proxy_port=self._proxy_port)
+        return self._post(
+            url=f"{self._url}/countErrorReports",
+            param_dict=params,
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
     #----------------------------------------------------------------------
     def clean(self):
         """ Deletes all the log files on all server machines in the site.  """
         params = {
             "f" : "json",
         }
-        return self._post(url=self._url + "/clean",
-                             param_dict=params,
-                             securityHandler=self._securityHandler,
-                            proxy_url=self._proxy_url,
-                            proxy_port=self._proxy_port)
+        return self._post(
+            url=f"{self._url}/clean",
+            param_dict=params,
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
     #----------------------------------------------------------------------
     @property
     def logSettings(self):
@@ -108,7 +112,7 @@ class Log(BaseAGSServer):
         params = {
             "f" : "json"
         }
-        sURL = self._url + "/settings"
+        sURL = f"{self._url}/settings"
         return self._get(url=sURL, param_dict=params,
                             securityHandler=self._securityHandler,
                             proxy_url=self._proxy_url,
@@ -130,7 +134,7 @@ class Log(BaseAGSServer):
              maxErrorReportsCount - maximum number of error report files
                                     per machine
         """
-        lURL = self._url + "/settings/edit"
+        lURL = f"{self._url}/settings/edit"
         allowed_levels =  ("OFF", "SEVERE", "WARNING", "INFO", "FINE", "VERBOSE", "DEBUG")
         currentSettings= self.logSettings
         currentSettings["f"] ="json"
@@ -140,11 +144,11 @@ class Log(BaseAGSServer):
         if logDir is not None:
             currentSettings['logDir'] = logDir
         if maxLogFileAge is not None and \
-           isinstance(maxLogFileAge, int):
+               isinstance(maxLogFileAge, int):
             currentSettings['maxLogFileAge'] = maxLogFileAge
         if maxErrorReportsCount is not None and \
-           isinstance(maxErrorReportsCount, int) and\
-           maxErrorReportsCount > 0:
+               isinstance(maxErrorReportsCount, int) and\
+               maxErrorReportsCount > 0:
             currentSettings['maxErrorReportsCount'] = maxErrorReportsCount
         return self._post(url=lURL, param_dict=currentSettings,
                              securityHandler=self._securityHandler,
@@ -188,10 +192,10 @@ class Log(BaseAGSServer):
             "pageSize" : 10000
         }
         if startTime is not None and \
-           isinstance(startTime, datetime):
+               isinstance(startTime, datetime):
             params['startTime'] = startTime.strftime("%Y-%m-%dT%H:%M:%S")
         if endTime is not None and \
-           isinstance(endTime, datetime):
+               isinstance(endTime, datetime):
             params['endTime'] = endTime.strftime("%Y-%m-%dT%H:%M:%S")
         if level.upper() in allowed_levels:
             params['level'] = level
@@ -202,29 +206,34 @@ class Log(BaseAGSServer):
         if machines != "*":
             qFilter['machines'] = machines.split(",")
         params['filter'] = qFilter
-        if export == True and \
-           out_path is not None:
-            messages = self._post(self._url + "/query", params,
-                                     securityHandler=self._securityHandler,
-                                     proxy_url=self._proxy_url,
-                                     proxy_port=self._proxy_port)
+        if export != True or out_path is None:
+            return self._post(
+                f"{self._url}/query",
+                params,
+                securityHandler=self._securityHandler,
+                proxy_url=self._proxy_url,
+                proxy_port=self._proxy_port,
+            )
+        messages = self._post(
+            f"{self._url}/query",
+            params,
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
 
-            with open(name=out_path, mode='wb') as f:
-                hasKeys = False
-                if exportType == "TAB":
-                    csvwriter = csv.writer(f, delimiter='\t')
-                else:
-                    csvwriter = csv.writer(f)
-                for message in messages['logMessages']:
-                    if hasKeys == False:
-                        csvwriter.writerow(message.keys())
-                        hasKeys = True
-                    csvwriter.writerow(message.values())
-                    del message
-            del messages
-            return out_path
-        else:
-            return self._post(self._url + "/query", params,
-                                 securityHandler=self._securityHandler,
-                                 proxy_url=self._proxy_url,
-                                 proxy_port=self._proxy_port)
+        with open(name=out_path, mode='wb') as f:
+            hasKeys = False
+            csvwriter = (
+                csv.writer(f, delimiter='\t')
+                if exportType == "TAB"
+                else csv.writer(f)
+            )
+            for message in messages['logMessages']:
+                if hasKeys == False:
+                    csvwriter.writerow(message.keys())
+                    hasKeys = True
+                csvwriter.writerow(message.values())
+                del message
+        del messages
+        return out_path

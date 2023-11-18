@@ -26,7 +26,7 @@ class _Federation(BaseAGOLClass):
                  initialize=False):
         """Constructor"""
         if url.lower().endswith("/federation") == False:
-            url = url + "/federation"
+            url = f"{url}/federation"
         self._url = url
         self._securityHandler = securityHandler
         self._proxy_url = proxy_url
@@ -47,10 +47,10 @@ class _Federation(BaseAGOLClass):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in manageportal.administration._Federation class.")
     #----------------------------------------------------------------------
@@ -63,7 +63,7 @@ class _Federation(BaseAGOLClass):
         if the server is set as a hosting server.
         """
         params = {"f" : "json"}
-        url = self._url + "/servers"
+        url = f"{self._url}/servers"
         return self._get(url=url,
                          param_dict=params,
                          proxy_port=self._proxy_port,
@@ -125,7 +125,7 @@ class _Federation(BaseAGOLClass):
         Parameters:
            serverId - unique id of the server
         """
-        url = self._url + "/servers/validate"
+        url = f"{self._url}/servers/validate"
         params = {"f" : "json"}
         return self._get(url=url,
                          param_dict=params,
@@ -151,7 +151,7 @@ class _log(BaseAGOLClass):
                  initialize=False):
         """Constructor"""
         if url.lower().endswith("/logs") == False:
-            url = url + "/logs"
+            url = f"{url}/logs"
         self._url = url
         self._securityHandler = securityHandler
         self._proxy_url = proxy_url
@@ -172,10 +172,10 @@ class _log(BaseAGOLClass):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in manageportal.administration.log class.")
     #----------------------------------------------------------------------
@@ -202,7 +202,7 @@ class _log(BaseAGOLClass):
     @property
     def settings(self):
         """returns the log settings for portal"""
-        url = self._url + "/settings"
+        url = f"{self._url}/settings"
         params = {
             "f" : "json",
         }
@@ -223,7 +223,7 @@ class _log(BaseAGOLClass):
                   DEBUG
               maxLogFileAge - the numbers of days to keep a single log file
         """
-        url = self._url + "/settings/edit"
+        url = f"{self._url}/settings/edit"
         params = {
             "f" : "json",
             "logDir" : logLocation,
@@ -255,33 +255,32 @@ class _log(BaseAGOLClass):
               messageCount - integer number of the max number of log
                 entries to return to the user.
         """
-        url = self._url + "/query"
-        filter_value = {"codes":[], "users":[], "source": "*"}
-        if source.lower() == "all":
-            filter_value['source'] = "*"
-        else:
-            filter_value['source'] = [source]
+        url = f"{self._url}/query"
+        filter_value = {
+            "codes": [],
+            "users": [],
+            "source": "*",
+            'source': "*" if source.lower() == "all" else [source],
+        }
         params = {
             "f" : "json",
             "level" : logLevel
 
         }
-        if not startTime is None and \
-           isinstance(startTime, datetime):
+        if startTime is not None and isinstance(startTime, datetime):
             params['startTime'] = startTime.strftime("%Y-%m-%dT%H:%M:%S")#2015-01-31T15:00:00
-        if not endTime is None and \
-           isinstance(endTime, datetime):
+        if endTime is not None and isinstance(endTime, datetime):
             params['endTime'] = startTime.strftime("%Y-%m-%dT%H:%M:%S")
-        if not logCodes is None:
+        if logCodes is not None:
             filter_value['codes'] = logCodes.split(',')
-        if not users is None:
+        if users is not None:
             filter_value['users'] = users.split(',')
-        if messageCount is None:
+        if messageCount is None or not isinstance(
+            messageCount, (int, long, float)
+        ):
             params['pageSize'] = 1000
-        elif isinstance(messageCount, (int, long, float)):
-            params['pageSize'] = int(messageCount)
         else:
-            params['pageSize'] = 1000
+            params['pageSize'] = int(messageCount)
         params['filter'] = filter_value
         return self._get(url=url,
                             param_dict=params,
@@ -291,7 +290,7 @@ class _log(BaseAGOLClass):
     #----------------------------------------------------------------------
     def cleanLogs(self):
         """erases all the log data"""
-        url = self._url + "/clean"
+        url = f"{self._url}/clean"
         params = {
             "f":"json"
         }
@@ -323,9 +322,14 @@ class _Security(BaseAGOLClass):
         """Constructor"""
         if securityHandler is None:
             pass
-        elif isinstance(securityHandler, PortalTokenSecurityHandler) or \
-               isinstance(securityHandler, ArcGISTokenSecurityHandler) or \
-               isinstance(securityHandler, OAuthSecurityHandler):
+        elif isinstance(
+            securityHandler,
+            (
+                PortalTokenSecurityHandler,
+                ArcGISTokenSecurityHandler,
+                OAuthSecurityHandler,
+            ),
+        ):
             self._securityHandler = securityHandler
             self._referer_url = securityHandler.referer_url
         self._proxy_url = proxy_url
@@ -347,10 +351,10 @@ class _Security(BaseAGOLClass):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in manageportal.administration.log class.")
     #----------------------------------------------------------------------
@@ -398,7 +402,7 @@ class _Security(BaseAGOLClass):
            idpUsername - name of the user on the domain controller.
                          Ex: domain\account
         """
-        url = self._url + "/users/createUser"
+        url = f"{self._url}/users/createUser"
         params = {
             "f" : "json",
             "username" : username,
@@ -481,7 +485,7 @@ class _Security(BaseAGOLClass):
                   "sigalg" : sigalg,
                   "validity" : validity
                   }
-        url = self._url + "/SSLCertificate/ generateCertificate"
+        url = f"{self._url}/SSLCertificate/ generateCertificate"
         return self._post(url=url,
                           param_dict=params,
                           proxy_port=self._proxy_port,
@@ -512,7 +516,7 @@ class _Security(BaseAGOLClass):
             "f" : "json",
             "appID" : appId
         }
-        url = self._url + "/oauth/getAppInfo"
+        url = f"{self._url}/oauth/getAppInfo"
         return self._get(url=url, param_dict=params,
                          proxy_url=self._proxy_url,
                          proxy_port=self._proxy_port)
@@ -534,7 +538,7 @@ class _Security(BaseAGOLClass):
             "filter" : searchFilter,
             "maxCount" : maxCount
         }
-        url = self._url + "/Groups/getEnterpriseGroupsForUser"
+        url = f"{self._url}/Groups/getEnterpriseGroupsForUser"
         return self._get(url=url,
                          param_dict=params,
                          proxy_url=self._proxy_url,
@@ -542,7 +546,7 @@ class _Security(BaseAGOLClass):
     #----------------------------------------------------------------------
     def getEnterpriseUser(self, username):
         """"""
-        url = self._url + "/users/getEnterpriseUser"
+        url = f"{self._url}/users/getEnterpriseUser"
         params = {
             "f" : "json",
             "username" : username
@@ -572,7 +576,7 @@ class _Security(BaseAGOLClass):
         }
         if searchFilter:
             params['filters'] = searchFilter
-        url = self._url + "/groups/getUsersWithinEnterpriseGroup"
+        url = f"{self._url}/groups/getUsersWithinEnterpriseGroup"
         return self._get(url=url,
                          param_dict=params,
                          proxy_url=self._proxy_url,
@@ -592,9 +596,8 @@ class _Security(BaseAGOLClass):
           certPassword - password to unlock the certificate
           certFile - certificate file
         """
-        url = self._url + "/sslCertificates/importExistingServerCertificate"
-        files = {}
-        files['certFile'] = certFile
+        url = f"{self._url}/sslCertificates/importExistingServerCertificate"
+        files = {'certFile': certFile}
         params = {
             "f" : "json",
             "alias" : alias,
@@ -615,7 +618,7 @@ class _Security(BaseAGOLClass):
         files = {
             "rootCSCertificate" : rootCSCertificate
         }
-        url = self._url + "/sslCertificates/importRootOrIntermediate"
+        url = f"{self._url}/sslCertificates/importRootOrIntermediate"
         return self._post(url=url,
                           param_dict=params,
                           files=files,
@@ -644,7 +647,7 @@ class _Security(BaseAGOLClass):
         OAuth2-specific properties of registered applications in Portal for
         ArcGIS.
         """
-        url = self._url + "/oauth"
+        url = f"{self._url}/oauth"
         params = {"f" : "json"}
         return self._get(url=url,
                          param_dict=params,
@@ -669,7 +672,7 @@ class _Security(BaseAGOLClass):
             "f" : "json",
             "groups" : groups
         }
-        url = self._url + "/groups/refreshMembership"
+        url = f"{self._url}/groups/refreshMembership"
         return self._post(url=url,
                           param_dict=params,
                           proxy_url=self._proxy_url,
@@ -693,7 +696,7 @@ class _Security(BaseAGOLClass):
             "f" : "json",
             "users" : users
         }
-        url = self._url + "/users/refreshMembership"
+        url = f"{self._url}/users/refreshMembership"
         return self._post(url=url,
                           param_dict=params,
                           proxy_port=self._proxy_port,
@@ -714,7 +717,7 @@ class _Security(BaseAGOLClass):
             "filter" : searchFilter,
             "maxCount" : maxCount
         }
-        url = self._url + "/groups/searchEnterpriseGroups"
+        url = f"{self._url}/groups/searchEnterpriseGroups"
         return self._post(url=url,
                           param_dict=params,
                           proxy_url=self._proxy_url,
@@ -735,7 +738,7 @@ class _Security(BaseAGOLClass):
             "filter" : searchFilter,
             "maxCount" : maxCount
         }
-        url = self._url + "/users/searchEnterpriseUsers"
+        url = f"{self._url}/users/searchEnterpriseUsers"
         return self._post(url=url,
                           param_dict=params,
                           proxy_url=self._proxy_url,
@@ -746,7 +749,7 @@ class _Security(BaseAGOLClass):
         """
         Lists certificates.
         """
-        url = self._url + "/SSLCertificate"
+        url = f"{self._url}/SSLCertificate"
         params = {"f" : "json"}
         return self._post(url=url,
                           param_dict=params,
@@ -768,7 +771,7 @@ class _Security(BaseAGOLClass):
         group store.
         """
         params = {"f" : "json"}
-        url = self._url + "/config/testIdentityStore"
+        url = f"{self._url}/config/testIdentityStore"
         return self._post(url=url,
                           param_dict=params,
                           proxy_url=self._proxy_url,
@@ -788,7 +791,7 @@ class _Security(BaseAGOLClass):
         portal instance.
         """
         params = {"f" : "json"}
-        url = self._url + "/users"
+        url = f"{self._url}/users"
         return self._get(url=url, param_dict=params,
                          proxy_url=self._proxy_url,
                          proxy_port=self._proxy_port)
@@ -801,7 +804,7 @@ class _Security(BaseAGOLClass):
         """
         params = {"f" : "json",
                   "appInfo" : appInfo}
-        url = self._url + "/oauth/updateAppInfo"
+        url = f"{self._url}/oauth/updateAppInfo"
         return self._post(url=url,
                           param_dict=params,
                           proxy_url=self._proxy_url,
@@ -823,7 +826,7 @@ class _Security(BaseAGOLClass):
             "username" : username,
             "idpUsername" : idpUsername
         }
-        url = self._url + "/users/updateEnterpriseUser"
+        url = f"{self._url}/users/updateEnterpriseUser"
         return self._post(url=url,
                           param_dict=params,
                           proxy_url=self._proxy_url,
@@ -839,7 +842,7 @@ class _Security(BaseAGOLClass):
             "sslProtocols" : sslProtocols,
             "cipherSuites" : cipherSuites
         }
-        url = self._url + "/sslcertificates/update"
+        url = f"{self._url}/sslcertificates/update"
         return self._post(url=url,
                           param_dict=params,
                           proxy_url=self._proxy_url,
@@ -875,7 +878,7 @@ class _Security(BaseAGOLClass):
         The default value for this property is false, meaning the services
         directory HTML pages are accessible to everyone.
         """
-        url = self._url + "/config/update"
+        url = f"{self._url}/config/update"
         params = {
             "f" : "json",
             "enableAutomaticAccountCreation": enableAutomaticAccountCreation,
@@ -940,7 +943,7 @@ class _Security(BaseAGOLClass):
                            If your LDAP is configured to be case
                            insensitive, set parameter to false.
         """
-        url = self._url + "/config/updateIdentityStore"
+        url = f"{self._url}/config/updateIdentityStore"
         params = {
             "f" : "json",
             "userPassword" : userPassword,
@@ -966,7 +969,7 @@ class _Security(BaseAGOLClass):
         Input:
            sharedKey - key used to generate token
         """
-        url = self._url + "/tokens/update"
+        url = f"{self._url}/tokens/update"
         params = {
             "f" : "json",
             "tokenConfig" : {"sharedKey" : sharedKey}
@@ -983,7 +986,7 @@ class _Security(BaseAGOLClass):
         Use the Update Token Configuration operation to change the
         configuration properties of the token service.
         """
-        url = self._url + "/tokens"
+        url = f"{self._url}/tokens"
         params = {
             "f" : "json"
         }
@@ -1005,7 +1008,7 @@ class _Security(BaseAGOLClass):
         or LDAP. By default, Portal for ArcGIS is configured to use the
         built-in store and token-based authentication.
         """
-        url = self._url + "/config"
+        url = f"{self._url}/config"
         params = {
             "f" : "json",
         }
@@ -1018,7 +1021,7 @@ class _Security(BaseAGOLClass):
     @property
     def users(self):
         """ returns the number of registered users on site """
-        url = self._url + "/users"
+        url = f"{self._url}/users"
         params = {
             "f" : "json"
         }
@@ -1061,7 +1064,7 @@ class _System(BaseAGOLClass):
         configuration web page or the command line utility provided with
         the installation.
         """
-        url = self._url + "/webadaptors"
+        url = f"{self._url}/webadaptors"
         params = {
             "f" : "json"
         }
@@ -1095,7 +1098,7 @@ class _System(BaseAGOLClass):
         Input:
            webAdaptorID - id of the web adaptor
         """
-        url = self._url + "/webadaptors/%s" % webAdaptorID
+        url = f"{self._url}/webadaptors/{webAdaptorID}"
         params = {
             "f" : "json"
         }
@@ -1118,7 +1121,7 @@ class _System(BaseAGOLClass):
         Input:
            webAdaptorID - id of the web adaptor
         """
-        url = self._url + "/webadaptors/%s/unregister" % webAdaptorID
+        url = f"{self._url}/webadaptors/{webAdaptorID}/unregister"
         params = {
             "f" : "json"
         }
@@ -1138,7 +1141,7 @@ class _System(BaseAGOLClass):
            webAdaptorsConfig - The JSON object containing all the properties
                                in the configuration.
         """
-        url = self._url + "/webadaptors/config/update"
+        url = f"{self._url}/webadaptors/config/update"
         params = {
             "f" : "json",
             "webAdaptorsConfig" : webAdaptorsConfig
@@ -1160,7 +1163,7 @@ class _System(BaseAGOLClass):
                           shared with the Web Adaptor. The Web Adaptor uses
                           these credentials to communicate with the portal.
         """
-        url = self._url + "/webadaptors/config"
+        url = f"{self._url}/webadaptors/config"
         params = {
             "f" : "json",
         }
@@ -1195,7 +1198,7 @@ class _System(BaseAGOLClass):
         If you would like to change the path for a directory, you can use
         the Edit Directory operation.
         """
-        url = self._url + "/directories"
+        url = f"{self._url}/directories"
         params = {
             "f" : "json"
         }
@@ -1220,7 +1223,7 @@ class _System(BaseAGOLClass):
         Input:
            directoryName - name of diretory category
         """
-        url = self._url + "/directories/%s" % directoryName
+        url = f"{self._url}/directories/{directoryName}"
         params = {
             "f" : "json"
         }
@@ -1244,7 +1247,7 @@ class _System(BaseAGOLClass):
            physicalPath - new path for directroy
            description - new description of the directory
         """
-        url = self._url + "/directories/%s/edit" % directoryName
+        url = f"{self._url}/directories/{directoryName}/edit"
         params = {
             "f" : "json",
             "physicalPath": physicalPath,
@@ -1269,7 +1272,7 @@ class _System(BaseAGOLClass):
             "f" : "json",
             "appId" : appId
         }
-        url = self._url + "/licenses/getEntitlements"
+        url = f"{self._url}/licenses/getEntitlements"
         return self._get(url=url, param_dict=params,
                          proxy_url=self._proxy_url,
                          proxy_port=self._proxy_port)
@@ -1280,7 +1283,7 @@ class _System(BaseAGOLClass):
                     "f" : "json",
                     "appId" : appId
                 }
-        url = self._url + "/licenses/importEntitlements"
+        url = f"{self._url}/licenses/importEntitlements"
         files = {"file" : entitlementFile}
         return self._post(url=url, param_dict=params,
                           files=files,
@@ -1294,7 +1297,7 @@ class _System(BaseAGOLClass):
         search results.
         """
         params = {"f" : "json"}
-        url = self._url + "/languages"
+        url = f"{self._url}/languages"
         return self._get(url=url,
                          param_dict=params,
                          proxy_url=self._proxy_url,
@@ -1317,7 +1320,7 @@ class _System(BaseAGOLClass):
         Parameters:
            username - username of  the account
         """
-        url = self._url + "/licenses/releaseLicense"
+        url = f"{self._url}/licenses/releaseLicense"
         params = {
             "username" : username,
             "f" : "json"
@@ -1346,7 +1349,7 @@ class _System(BaseAGOLClass):
             "f" : "json",
             "appId" : appId
         }
-        url = self._url + "/licenses/removeAllEntitlements"
+        url = f"{self._url}/licenses/removeAllEntitlements"
         return self._post(url=url,
                           param_dict=params,
                           proxy_url=self._proxy_url,
@@ -1359,7 +1362,7 @@ class _System(BaseAGOLClass):
         control the portal's environment.
         """
         params = {"f" : "json"}
-        url = self._url + "/properties"
+        url = f"{self._url}/properties"
         return self._get(url=url,
                          param_dict=params,
                          proxy_port=self._proxy_port,
@@ -1407,7 +1410,7 @@ class _System(BaseAGOLClass):
            licenseManagerInfo - The JSON representation of the license
              server connection information.
         """
-        url = self._url + "/licenses/updateLicenseManager"
+        url = f"{self._url}/licenses/updateLicenseManager"
         params = {
             "f" : "json",
             "licenseManagerInfo" : licenseManagerInfo
@@ -1428,7 +1431,7 @@ class _System(BaseAGOLClass):
         administrative database account that is used by components within
         the portal to communicate with the database server.
         """
-        url = self._url + "/database"
+        url = f"{self._url}/database"
         params = {
             "f" : "json"
         }
@@ -1453,7 +1456,7 @@ class _System(BaseAGOLClass):
            username - database user name
            password - database user password
         """
-        url = self._url + "/database/updateAdminAccount"
+        url = f"{self._url}/database/updateAdminAccount"
         params = {
             "f" : "json",
             "username" : username,
@@ -1473,7 +1476,7 @@ class _System(BaseAGOLClass):
         as the port number and host name if you want the portal sharing API
         to connect to and access another indexing service.
         """
-        url = self._url + "/indexer"
+        url = f"{self._url}/indexer"
         params = {
             "f" : "json",
         }
@@ -1494,7 +1497,7 @@ class _System(BaseAGOLClass):
         that you reindex to correct any issues. If indexing is in progress,
         you can monitor the status by refreshing the page.
         """
-        url = self._url + "/indexer/status"
+        url = f"{self._url}/indexer/status"
         params = {
             "f" : "json"
         }
@@ -1521,7 +1524,7 @@ class _System(BaseAGOLClass):
                      include in the index. This is useful if you want to
                      only index certain items or user accounts.
         """
-        url = self._url + "/indexer/reindex"
+        url = f"{self._url}/indexer/reindex"
         params = {
             "f" : "json",
             "mode" : mode,
@@ -1549,7 +1552,7 @@ class _System(BaseAGOLClass):
            indexerPort - The port number on which the index service is
                          listening. The default value is 7199
         """
-        url = self._url + "/indexer/update"
+        url = f"{self._url}/indexer/update"
         params = {
             "f" : "json",
             "indexerHost": indexerHost,
@@ -1567,7 +1570,7 @@ class _System(BaseAGOLClass):
         Portal for ArcGIS requires a valid license to function correctly.
         This resource returns the current status of the license.
         """
-        url = self._url + "/licenses"
+        url = f"{self._url}/licenses"
         params = {
             "f" : "json"
         }
@@ -1605,7 +1608,7 @@ class PortalAdministration(BaseAGOLClass):
                  initalize=False):
         """Constructor"""
         if admin_url.endswith("/portaladmin") == False:
-            admin_url = admin_url + "/portaladmin"
+            admin_url = f"{admin_url}/portaladmin"
         if securityHandler is not None:
             self._securityHandler = securityHandler
             self._referer_url = securityHandler.referer_url
@@ -1630,10 +1633,10 @@ class PortalAdministration(BaseAGOLClass):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 setattr(self, k, v)
                 print( k, " - attribute not implemented in manageportal.administration class.")
@@ -1715,7 +1718,7 @@ class PortalAdministration(BaseAGOLClass):
             "securityQuestionIdx" : securityQuestionIdx,
             "contentDir" : contentDir
         }
-        url = self._url + "/createNewSite"
+        url = f"{self._url}/createNewSite"
         return self._get(url=url,
                           param_dict=params)
     #----------------------------------------------------------------------
@@ -1728,7 +1731,7 @@ class PortalAdministration(BaseAGOLClass):
             "location" : location,
             "f" : "json"
         }
-        url = self._url + "/exportSite"
+        url = f"{self._url}/exportSite"
         return self._post(url=url, param_dict=params)
     #----------------------------------------------------------------------
     def importSite(self, location):
@@ -1740,7 +1743,7 @@ class PortalAdministration(BaseAGOLClass):
             "location" : location,
             "f" : "json"
         }
-        url = self._url + "/importSite"
+        url = f"{self._url}/importSite"
         return self._post(url=url, param_dict=params)
     #----------------------------------------------------------------------
     def joinSite(self, machineAdminUrl,
@@ -1756,7 +1759,7 @@ class PortalAdministration(BaseAGOLClass):
             "password" : password,
             "f" : "json"
         }
-        url = self._url + "/joinSite"
+        url = f"{self._url}/joinSite"
         return self._post(url=url, param_dict=params)
     #----------------------------------------------------------------------
     def unregisterMachine(self, machineName):
@@ -1765,7 +1768,7 @@ class PortalAdministration(BaseAGOLClass):
         operation can only performed when there are two machines
         participating in a portal site.
         """
-        url = self._url + "/machines/unregister"
+        url = f"{self._url}/machines/unregister"
         params = {
             "f" : "json",
             "machineName" : machineName
@@ -1778,7 +1781,7 @@ class PortalAdministration(BaseAGOLClass):
     @property
     def federation(self):
         """returns the class that controls federation"""
-        url = self._url + "/federation"
+        url = f"{self._url}/federation"
         return _Federation(url=url,
                            securityHandler=self._securityHandler,
                            proxy_url=self._proxy_url,
@@ -1789,7 +1792,7 @@ class PortalAdministration(BaseAGOLClass):
         """
         Creates a reference to the System operations for Portal
         """
-        url = self._url + "/system"
+        url = f"{self._url}/system"
         return _System(url=url,
                        securityHandler=self._securityHandler,
                        proxy_url=self._proxy_url,
@@ -1800,7 +1803,7 @@ class PortalAdministration(BaseAGOLClass):
         """
         Creates a reference to the Security operations for Portal
         """
-        url = self._url + "/security"
+        url = f"{self._url}/security"
         return _Security(url=url,
                          securityHandler=self._securityHandler,
                          proxy_url=self._proxy_url,
@@ -1809,7 +1812,7 @@ class PortalAdministration(BaseAGOLClass):
     @property
     def logs(self):
         """returns the portals log information"""
-        url = self._url + "/logs"
+        url = f"{self._url}/logs"
         return _log(url=url,
                     securityHandler=self._securityHandler,
                     proxy_url=self._proxy_url,

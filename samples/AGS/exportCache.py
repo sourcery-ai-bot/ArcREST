@@ -8,16 +8,12 @@ import arcrest
 
 
 def get_parameter(params, param_name):
-    for param in params:
-        if param['name'] == param_name:
-            return param
-
-    return None
+    return next((param for param in params if param['name'] == param_name), None)
 
 
 def print_message(message):
     if ('type' in message) and ('description' in message):
-        print("{}: {}".format(message['type'], message['description']))
+        print(f"{message['type']}: {message['description']}")
     else:
         print(message)
 
@@ -31,7 +27,8 @@ if __name__ == '__main__':
 
     # get service information
     service = arcrest.ags.server.MapService(
-            "{}/rest/services/{}".format(ags_url, map_service.replace(":", "/")))
+        f'{ags_url}/rest/services/{map_service.replace(":", "/")}'
+    )
 
     # check if the service is cached
     print(service.singleFusedMapCache)
@@ -55,23 +52,19 @@ if __name__ == '__main__':
     sh = arcrest.AGSTokenSecurityHandler(
         username=username,
         password=password,
-        token_url=ags_url + "/tokens/",
-        org_url=ags_url)
+        token_url=f"{ags_url}/tokens/",
+        org_url=ags_url,
+    )
 
-    gp_export_url = "{}/rest/services/System/CachingTools/GPServer".format(ags_url)
+    gp_export_url = f"{ags_url}/rest/services/System/CachingTools/GPServer"
     gp_service = arcrest.ags.server.GPService(gp_export_url, sh)
 
     # show all tasks
     print(gp_service.tasks)
 
-    # get the cache export task
-    export_cache_task = None
-    for task in gp_service.tasks:
-        if task.name == "ExportCache":
-            export_cache_task = task
-            break
-
-    if export_cache_task:
+    if export_cache_task := next(
+        (task for task in gp_service.tasks if task.name == "ExportCache"), None
+    ):
         # get the parameter
         params = export_cache_task.parameters
         params1 = export_cache_task.parameters
@@ -107,7 +100,7 @@ if __name__ == '__main__':
         tile_package.value = False
 
         levels = p_levels['defaultValue']
-        levels.value = lod2scale[0] + ";" + lod2scale[1]
+        levels.value = f"{lod2scale[0]};{lod2scale[1]}"
 
         thread_count = p_thread_count['defaultValue']
         thread_count.value = 1
@@ -123,7 +116,7 @@ if __name__ == '__main__':
         # wait until the job finishes
         last_message_index = 0
         while job.jobStatus in ["esriJobSubmitted", "esriJobExecuting", "esriJobWaiting"]:
-            print("Job status: {}".format(job.jobStatus))
+            print(f"Job status: {job.jobStatus}")
             messages = job.messages
             while last_message_index < len(messages):
                 print_message(messages[last_message_index])
@@ -133,7 +126,7 @@ if __name__ == '__main__':
             sleep(5)
 
         # print the final messages
-        print("Job status: {}".format(job.jobStatus))
+        print(f"Job status: {job.jobStatus}")
         messages = job.messages
         for i in range(last_message_index, len(messages)):
             print_message(messages[i])

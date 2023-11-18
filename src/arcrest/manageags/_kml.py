@@ -39,10 +39,10 @@ class KML(BaseAGSServer):
                                  proxy_port=self._proxy_port)
         attributes = [attr for attr in dir(self)
                     if not attr.startswith('__') and \
-                    not attr.startswith('_')]
+                        not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented for KML")
             del k
@@ -54,7 +54,7 @@ class KML(BaseAGSServer):
            See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Create_Kmz/02r3000001tm000000/
            for more information.
         """
-        kmlURL = self._url + "/createKmz"
+        kmlURL = f"{self._url}/createKmz"
         params = {
             "f" : "json",
             "kml" : kmz_as_json

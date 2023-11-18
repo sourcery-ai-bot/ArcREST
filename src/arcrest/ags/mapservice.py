@@ -62,18 +62,13 @@ class MapService(BaseAGSServer):
         self._proxy_url= proxy_url
         self._proxy_port = proxy_port
         self._url = url
-        if securityHandler is not None and \
-           isinstance(securityHandler, (security.AGSTokenSecurityHandler,
+        if securityHandler is not None:
+            if isinstance(securityHandler, (security.AGSTokenSecurityHandler,
                                         security.PortalServerSecurityHandler,
                                         security.ArcGISTokenSecurityHandler)):
-            self._securityHandler = securityHandler
-        if not securityHandler is None:
+                self._securityHandler = securityHandler
             self._referer_url = securityHandler.referer_url
             self._token = securityHandler.token
-        elif securityHandler is None:
-            pass
-        else:
-            raise AttributeError("Security Handler must type of security.AGSTokenSecurityHandler")
         if initialize:
             self.__init()
     #----------------------------------------------------------------------
@@ -83,7 +78,7 @@ class MapService(BaseAGSServer):
         params = {
             "f" : "json"
         }
-        url = self._url + "/info/iteminfo"
+        url = f"{self._url}/info/iteminfo"
         return self._get(url=url, param_dict=params,
                             securityHandler=self._securityHandler,
                             proxy_url=self._proxy_url,
@@ -91,7 +86,7 @@ class MapService(BaseAGSServer):
     #----------------------------------------------------------------------
     def downloadThumbnail(self, outPath):
         """downloads the items's thumbnail"""
-        url = self._url + "/info/thumbnail"
+        url = f"{self._url}/info/thumbnail"
         params = {
 
         }
@@ -106,7 +101,7 @@ class MapService(BaseAGSServer):
     def downloadMetadataFile(self, outPath):
         """downloads the metadata file to a given path"""
         fileName = "metadata.xml"
-        url = self._url + "/info/metadata"
+        url = f"{self._url}/info/metadata"
         params = {}
         return self._get(url=url,
                          out_folder=outPath,
@@ -141,12 +136,12 @@ class MapService(BaseAGSServer):
         self._json_dict = json_dict
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k == "tables":
                 self._tables = []
                 for tbl in v:
-                    url = self._url + "/%s" % tbl['id']
+                    url = f"{self._url}/{tbl['id']}"
                     self._tables.append(
                         TableLayer(url,
                                    securityHandler=self._securityHandler,
@@ -156,7 +151,7 @@ class MapService(BaseAGSServer):
             elif k == "layers":
                 self._layers = []
                 for lyr in v:
-                    url = self._url + "/%s" % lyr['id']
+                    url = f"{self._url}/{lyr['id']}"
                     layer_type = self._getLayerType(url)
                     if layer_type == "Feature Layer":
                         self._layers.append(
@@ -185,11 +180,11 @@ class MapService(BaseAGSServer):
                                             securityHandler=self._securityHandler,
                                             proxy_port=self._proxy_port,
                                             proxy_url=self._proxy_url)
-                        )    
+                        )
                     else:
-                        print ('Type %s is not implemented' % layer_type)
+                        print(f'Type {layer_type} is not implemented')
             elif k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
 
             else:
                 print (k, " is not implemented for mapservice.")
@@ -219,8 +214,6 @@ class MapService(BaseAGSServer):
         if isinstance(value, BaseSecurityHandler):
             if isinstance(value, security.AGSTokenSecurityHandler):
                 self._securityHandler = value
-            else:
-                pass
         elif value is None:
             self._securityHandler = None
 
@@ -425,26 +418,26 @@ class MapService(BaseAGSServer):
         extensions = []
         if isinstance(self.supportedExtensions, list):
             for ext in self.supportedExtensions:
-                extensionURL = self._url + "/exts/%s" % ext
+                extensionURL = f"{self._url}/exts/{ext}"
                 if ext == "SchematicsServer":
                     extensions.append(SchematicsService(url=extensionURL,
                                                         securityHandler=self._securityHandler,
                                                         proxy_url=self._proxy_url,
                                                         proxy_port=self._proxy_port))
-            return extensions
         else:
-            extensionURL = self._url + "/exts/%s" % self.supportedExtensions
+            extensionURL = f"{self._url}/exts/{self.supportedExtensions}"
             if self.supportedExtensions == "SchematicsServer":
                 extensions.append(SchematicsService(url=extensionURL,
                                                     securityHandler=self._securityHandler,
                                                     proxy_url=self._proxy_url,
                                                     proxy_port=self._proxy_port))
-            return extensions
+
+        return extensions
     #----------------------------------------------------------------------
     @property
     def allLayers(self):
         """ returns all layers for the service """
-        url = self._url + "/layers"
+        url = f"{self._url}/layers"
         params = {
             "f" : "json"
         }
@@ -457,21 +450,24 @@ class MapService(BaseAGSServer):
             "tables" : []
         }
         for k, v in res.items():
-            if k == "layers":
-                for val in v:
+            for val in v:
+                if k == "layers":
                     return_dict['layers'].append(
-                        FeatureLayer(url=self._url + "/%s" % val['id'],
-                                     securityHandler=self._securityHandler,
-                                     proxy_url=self._proxy_url,
-                                     proxy_port=self._proxy_port)
+                        FeatureLayer(
+                            url=f"{self._url}/{val['id']}",
+                            securityHandler=self._securityHandler,
+                            proxy_url=self._proxy_url,
+                            proxy_port=self._proxy_port,
+                        )
                     )
-            elif k == "tables":
-                for val in v:
+                elif k == "tables":
                     return_dict['tables'].append(
-                        TableLayer(url=self._url + "/%s" % val['id'],
-                                   securityHandler=self._securityHandler,
-                                   proxy_url=self._proxy_url,
-                                   proxy_port=self._proxy_port)
+                        TableLayer(
+                            url=f"{self._url}/{val['id']}",
+                            securityHandler=self._securityHandler,
+                            proxy_url=self._proxy_url,
+                            proxy_port=self._proxy_port,
+                        )
                     )
             del k,v
         return return_dict
@@ -483,7 +479,7 @@ class MapService(BaseAGSServer):
              geometryPrecision="", dynamicLayers="",
              returnZ=False, returnM=False, gdbVersion=""):
         """ performs the map service find operation """
-        url = self._url + "/find"
+        url = f"{self._url}/find"
         #print url
         params = {
             "f" : "json",
@@ -505,10 +501,7 @@ class MapService(BaseAGSServer):
                            securityHandler=self._securityHandler,
                            proxy_url=self._proxy_url,
                            proxy_port=self._proxy_port)
-        qResults = []
-        for r in res['results']:
-            qResults.append(Feature(r))
-        return qResults
+        return [Feature(r) for r in res['results']]
     #----------------------------------------------------------------------
     def _getLayerType(self, url):
         """ returns a layer type """
@@ -526,7 +519,7 @@ class MapService(BaseAGSServer):
         """ The feature resource represents a single feature in a dynamic
             layer in a map service
         """
-        url = self._url + "/dynamicLayer/%s" % oid
+        url = f"{self._url}/dynamicLayer/{oid}"
         params = {
             "f": "json",
             "returnZ": returnZ,
@@ -700,7 +693,7 @@ class MapService(BaseAGSServer):
         if gdbVersion is not None:
             params['gdbVersion'] = gdbVersion
 
-        identifyURL = self._url + "/identify"
+        identifyURL = f"{self._url}/identify"
         return self._get(url=identifyURL,
                             param_dict=params,
                             securityHandler=self._securityHandler,
@@ -709,10 +702,7 @@ class MapService(BaseAGSServer):
     #----------------------------------------------------------------------
     def _convert_boolean(self, value):
         """ converts a boolean value to json value """
-        if value == True:
-            return 'true'
-        else:
-            return 'false'
+        return 'true' if value == True else 'false'
     #----------------------------------------------------------------------
     def generateKML(self, save_location, docName, layers, layerOptions="composite"):
         """
@@ -739,7 +729,7 @@ class MapService(BaseAGSServer):
                              values: composite | separateImage |
                                      nonComposite
         """
-        kmlURL = self._url + "/generateKml"
+        kmlURL = f"{self._url}/generateKml"
         params= {
             "f" : "json",
             'docName' : docName,
@@ -825,50 +815,48 @@ class MapService(BaseAGSServer):
                        specified bounding box (bbox).
 
         """
+        if not isinstance(bbox, Envelope):
+            return None
+        vals = bbox.asDictionary
         params = {
-            "f" : "json"
+            "f": "json",
+            'bbox': f"{vals['xmin']},{vals['ymin']},{vals['xmax']},{vals['ymax']}",
+            'bboxSR': vals['spatialReference'],
         }
 
-        if isinstance(bbox, Envelope):
-            vals = bbox.asDictionary
-            params['bbox'] = "%s,%s,%s,%s" % (vals['xmin'], vals['ymin'],
-                                              vals['xmax'], vals['ymax'])
-            params['bboxSR'] = vals['spatialReference']
-            if dpi is not None:
-                params['dpi'] = dpi
-            if size is not None:
-                params['size'] = size
-            if imageSR is not None and \
+        if dpi is not None:
+            params['dpi'] = dpi
+        if size is not None:
+            params['size'] = size
+        if imageSR is not None and \
                isinstance(imageSR, SpatialReference):
-                params['imageSR'] = {'wkid': imageSR.wkid}
-            if image_format is not None:
-                params['format'] = image_format
-            if layerDefFilter is not None and \
+            params['imageSR'] = {'wkid': imageSR.wkid}
+        if image_format is not None:
+            params['format'] = image_format
+        if layerDefFilter is not None and \
                isinstance(layerDefFilter,
-                          filters.LayerDefinitionFilter):
-                params['layerDefs'] = layerDefFilter.filter
-            if layers is not None:
-                params['layers'] = layers
-            if transparent is not None:
-                params['transparent'] = transparent
-            if timeFilter is not None and \
+                      filters.LayerDefinitionFilter):
+            params['layerDefs'] = layerDefFilter.filter
+        if layers is not None:
+            params['layers'] = layers
+        if transparent is not None:
+            params['transparent'] = transparent
+        if timeFilter is not None and \
                isinstance(timeFilter, filters.TimeFilter):
-                params['time'] = timeFilter.filter
-            if layerTimeOptions is not None:
-                params['layerTimeOptions'] = layerTimeOptions
-            if dynamicLayers is not None and \
+            params['time'] = timeFilter.filter
+        if layerTimeOptions is not None:
+            params['layerTimeOptions'] = layerTimeOptions
+        if dynamicLayers is not None and \
                isinstance(dynamicLayers, DynamicData):
-                params['dynamicLayers'] = dynamicLayers.asDictionary
-            if mapScale is not None:
-                params['mapScale'] = mapScale
-            exportURL = self._url + "/export"
-            return self._get(url=exportURL,
-                                param_dict=params,
-                                securityHandler=self._securityHandler,
-                                proxy_url=self._proxy_url,
-                                proxy_port=self._proxy_port)
-        else:
-            return None
+            params['dynamicLayers'] = dynamicLayers.asDictionary
+        if mapScale is not None:
+            params['mapScale'] = mapScale
+        exportURL = f"{self._url}/export"
+        return self._get(url=exportURL,
+                            param_dict=params,
+                            securityHandler=self._securityHandler,
+                            proxy_url=self._proxy_url,
+                            proxy_port=self._proxy_port)
     #----------------------------------------------------------------------
     def estimateExportTilesSize(self,
                                 exportBy,
@@ -927,16 +915,15 @@ class MapService(BaseAGSServer):
          is set to False, the function will wait until the task completes.
            Values: True | False
         """
-        url = self._url + "/estimateExportTilesSize"
+        url = f"{self._url}/estimateExportTilesSize"
         params = {
-            "f" : "json",
-            "levels" : levels,
-            "exportBy" : exportBy,
-            "tilePackage" : tilePackage,
-            "exportExtent" : exportExtent
+            "f": "json",
+            "exportBy": exportBy,
+            "tilePackage": tilePackage,
+            "exportExtent": exportExtent,
+            "levels": levels,
         }
-        params["levels"] = levels
-        if not areaOfInterest is None:
+        if areaOfInterest is not None:
             if isinstance(areaOfInterest, Polygon):
                 template = { "features": [areaOfInterest.asDictionary]}
                 params['areaOfInterest'] = template
@@ -948,27 +935,25 @@ class MapService(BaseAGSServer):
                                 securityHandler=self._securityHandler,
                                 proxy_url=self._proxy_url,
                                 proxy_port=self._proxy_port)
-        else:
-            exportJob = self._get(url=url,
-                                     param_dict=params,
-                                     securityHandler=self._securityHandler,
-                                     proxy_url=self._proxy_url,
-                                     proxy_port=self._proxy_port)
-            jobUrl = "%s/jobs/%s" % (url, exportJob['jobId'])
-            gpJob = GPJob(url=jobUrl,
-                          securityHandler=self._securityHandler,
-                          proxy_port=self._proxy_port,
-                          proxy_url=self._proxy_url)
-            status = gpJob.jobStatus
-            while status != "esriJobSucceeded":
-                if status in ['esriJobFailed',
+        exportJob = self._get(url=url,
+                                 param_dict=params,
+                                 securityHandler=self._securityHandler,
+                                 proxy_url=self._proxy_url,
+                                 proxy_port=self._proxy_port)
+        jobUrl = f"{url}/jobs/{exportJob['jobId']}"
+        gpJob = GPJob(url=jobUrl,
+                      securityHandler=self._securityHandler,
+                      proxy_port=self._proxy_port,
+                      proxy_url=self._proxy_url)
+        status = gpJob.jobStatus
+        while status != "esriJobSucceeded":
+            if status in ['esriJobFailed',
                               'esriJobCancelling',
                               'esriJobCancelled']:
-                    return gpJob.messages
-                else:
-                    time.sleep(5)
-                    status = gpJob.jobStatus
-            return gpJob.results
+                return gpJob.messages
+            time.sleep(5)
+            status = gpJob.jobStatus
+        return gpJob.results
     #----------------------------------------------------------------------
     def exportTiles(self,
                     levels,
@@ -1066,7 +1051,7 @@ class MapService(BaseAGSServer):
             "exportBy" : exportBy,
             "levels" : levels
         }
-        url = self._url + "/exportTiles"
+        url = f"{self._url}/exportTiles"
         if isinstance(areaOfInterest, Polygon):
             geom = areaOfInterest.asDictionary()
             template = { "features": [geom]}
@@ -1075,52 +1060,48 @@ class MapService(BaseAGSServer):
             return self._get(url=url, param_dict=params,
                             proxy_url=self._proxy_url,
                             proxy_port=self._proxy_port)
-        else:
-            exportJob = self._get(url=url, param_dict=params,
-                                     securityHandler=self._securityHandler,
-                                     proxy_url=self._proxy_url,
-                                     proxy_port=self._proxy_port)
-            jobUrl = "%s/jobs/%s" % (url, exportJob['jobId'])
-            gpJob = GPJob(url=jobUrl,
-                          securityHandler=self._securityHandler,
-                          proxy_port=self._proxy_port,
-                          proxy_url=self._proxy_url)
-            status = gpJob.jobStatus
-            while status != "esriJobSucceeded":
-                if status in ['esriJobFailed',
+        exportJob = self._get(url=url, param_dict=params,
+                                 securityHandler=self._securityHandler,
+                                 proxy_url=self._proxy_url,
+                                 proxy_port=self._proxy_port)
+        jobUrl = f"{url}/jobs/{exportJob['jobId']}"
+        gpJob = GPJob(url=jobUrl,
+                      securityHandler=self._securityHandler,
+                      proxy_port=self._proxy_port,
+                      proxy_url=self._proxy_url)
+        status = gpJob.jobStatus
+        while status != "esriJobSucceeded":
+            if status in ['esriJobFailed',
                                        'esriJobCancelling',
                                        'esriJobCancelled']:
-                    return None
-                else:
-                    time.sleep(5)
-                    status = gpJob.jobStatus
-            allResults = gpJob.results
-            for k,v in allResults.items():
-                if k == "out_service_url":
-                    value = v['value']
-                    params = {
-                        "f" : "json"
-                    }
-                    gpRes = self._get(url=v['value'],
-                                         param_dict=params,
-                                         securityHandler=self._securityHandler,
-                                         proxy_url=self._proxy_url,
-                                         proxy_port=self._proxy_port)
-                    if tilePackage == True:
-                        files = []
-                        for f in gpRes['files']:
-                            name = f['name']
-                            dlURL = f['url']
-                            files.append(
-                                self._get(url=dlURL,
-                                          out_folder=tempfile.gettempdir(),
-                                          file_name=name,
-                                          param_dict=params,
-                                          securityHandler=self._securityHandler,
-                                          proxy_url=self._proxy_url,
-                                          proxy_port=self._proxy_port))
-                        return files
-                    else:
-                        return gpRes['folders']
-                else:
-                    return None
+                return None
+            time.sleep(5)
+            status = gpJob.jobStatus
+        allResults = gpJob.results
+        for k, v in allResults.items():
+            if k != "out_service_url":
+                return None
+            value = v['value']
+            params = {
+                "f" : "json"
+            }
+            gpRes = self._get(url=v['value'],
+                                 param_dict=params,
+                                 securityHandler=self._securityHandler,
+                                 proxy_url=self._proxy_url,
+                                 proxy_port=self._proxy_port)
+            if tilePackage != True:
+                return gpRes['folders']
+            files = []
+            for f in gpRes['files']:
+                name = f['name']
+                dlURL = f['url']
+                files.append(
+                    self._get(url=dlURL,
+                              out_folder=tempfile.gettempdir(),
+                              file_name=name,
+                              param_dict=params,
+                              securityHandler=self._securityHandler,
+                              proxy_url=self._proxy_url,
+                              proxy_port=self._proxy_port))
+            return files

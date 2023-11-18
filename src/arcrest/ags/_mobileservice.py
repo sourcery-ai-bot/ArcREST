@@ -69,10 +69,10 @@ class MobileServiceLayer(BaseAGSServer):
         self._json = json.dumps(self._json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, v)
+                setattr(self, f"_{k}", v)
             else:
                 print (k, " - attribute not implemented for Mobile Service Layer.")
     #----------------------------------------------------------------------
@@ -321,10 +321,10 @@ class MobileService(BaseAGSServer):
         self._json = json.dumps(self._json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, v)
+                setattr(self, f"_{k}", v)
             else:
                 print (k, " - attribute not implemented for Mobile Service.")
     #----------------------------------------------------------------------
@@ -349,7 +349,7 @@ class MobileService(BaseAGSServer):
             self.__init()
         lyrs = []
         for lyr in self._layers:
-            url = self._url + "/%s" % lyr['id']
+            url = f"{self._url}/{lyr['id']}"
             lyr['object'] = MobileServiceLayer(url=url,
                                                securityHandler=self._securityHandler,
                                                proxy_url=self._proxy_url,

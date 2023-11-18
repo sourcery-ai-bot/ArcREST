@@ -18,15 +18,17 @@ class InvitationList(object):
                 firstname, lastname,
                 email, role):
         """adds a user to the invitation list"""
-        self._invites.append({
-            "username":username,
-            "password":password,
-            "firstname":firstname,
-            "lastname":lastname,
-            "fullname":"%s %s" % (firstname, lastname),
-            "email":email,
-            "role":role
-        })
+        self._invites.append(
+            {
+                "username": username,
+                "password": password,
+                "firstname": firstname,
+                "lastname": lastname,
+                "fullname": f"{firstname} {lastname}",
+                "email": email,
+                "role": role,
+            }
+        )
     #----------------------------------------------------------------------
     def removeByIndex(self, index):
         """removes a user from the invitation list by position"""
@@ -320,10 +322,11 @@ class CreateServiceParameters(BaseParameters):
             val['supportedQueryFormats'] = self._supportedQueryFormats
 
         if self._xssPreventionEnabled:
-            val['xssPreventionInfo'] = {}
-            val['xssPreventionInfo']['xssPreventionEnabled'] = self._xssPreventionEnabled
-            val['xssPreventionInfo']['xssPreventionRule'] = self._xssPreventionRule
-            val['xssPreventionInfo']['xssInputRule'] = self._xssInputRule
+            val['xssPreventionInfo'] = {
+                'xssPreventionEnabled': self._xssPreventionEnabled,
+                'xssPreventionRule': self._xssPreventionRule,
+                'xssInputRule': self._xssInputRule,
+            }
         return val
     #----------------------------------------------------------------------
     def __str__(self):
@@ -429,24 +432,23 @@ class PortalParameters(BaseParameters):
         """Constructor"""
         for key, value in kwargv:
             if key in self.__allowed_keys:
-                setattr(self, "_"+ key, value)
+                setattr(self, f"_{key}", value)
     @staticmethod
     def fromDictionary(value):
         """creates the portal properties object from a dictionary"""
-        if isinstance(value, dict):
-            pp = PortalParameters()
-            for k,v in value.items():
-                setattr(pp, "_%s" % k, v)
-            return pp
-        else:
+        if not isinstance(value, dict):
             raise AttributeError("Invalid input.")
+        pp = PortalParameters()
+        for k, v in value.items():
+            setattr(pp, f"_{k}", v)
+        return pp
     #----------------------------------------------------------------------
     @property
     def value(self):
         """ returns the class as a dictionary """
         val = {}
         for k in self.__allowed_keys:
-            v = getattr(self, "_" + k)
+            v = getattr(self, f"_{k}")
             if v is not None:
                 val[k] = v
         return val
@@ -1743,7 +1745,7 @@ class PublishCSVParameters(BaseParameters):
         if locationType.lower() in self._allowed_locationType:
             self._locationType = locationType
         else:
-            raise AttributeError("Invalid locationType %s." % locationType)
+            raise AttributeError(f"Invalid locationType {locationType}.")
         #["coordinates", "address", "lookup", "none"]
         if locationType.lower() == "none":
             pass
@@ -1752,11 +1754,11 @@ class PublishCSVParameters(BaseParameters):
                 raise AttributeError("addressTemplate must be provide for this location type")
         elif locationType.lower() == "coordinates":
             if latitudeFieldName is None or \
-               longitudeFieldName is None:
+                   longitudeFieldName is None:
                 raise AttributeError("Latitude and Longitude fields must be provided with this location type.")
         elif locationType.lower() == "lookup":
             if lookupFields is None or \
-               lookupType is None:
+                   lookupType is None:
                 raise AttributeError("lookupFields and lookupType must be provide with this location type.")
         self._latitudeFieldName = latitudeFieldName
         self._longitudeFieldName = longitudeFieldName
@@ -1776,7 +1778,7 @@ class PublishCSVParameters(BaseParameters):
         """returns the values as a dictionary"""
         val = {}
         for k in self.__allowed_keys:
-            value = getattr(self, "_" + k)
+            value = getattr(self, f"_{k}")
             if value is not None:
                 val[k] = value
         return val
@@ -2060,7 +2062,7 @@ class PublishShapefileParameter(BaseParameters):
         """returns the object as a dictionary"""
         val = {}
         for k in self.__allowed_keys:
-            value = getattr(self, "_" + k)
+            value = getattr(self, f"_{k}")
             if value is not None:
                 val[k] = value
         return val
@@ -2170,7 +2172,7 @@ class PublishFeatureCollectionParameter(BaseParameters):
         """returns the object as a dictionary"""
         val = {}
         for k in self.__allowed_keys:
-            value = getattr(self, "_" + k)
+            value = getattr(self, f"_{k}")
             if value is not None:
                 val[k] = value
         return val
@@ -2353,7 +2355,7 @@ class GenerateParameter(BaseParameters):
         """returns the object as a dictionary"""
         val = {}
         for k in self.__allowed_keys:
-            value = getattr(self, "_" + k)
+            value = getattr(self, f"_{k}")
             if value is not None:
                 val[k] = value
         return val
@@ -2549,7 +2551,7 @@ class PublishFGDBParameter(BaseParameters):
         """returns the object as a dictionary"""
         val = {}
         for k in self.__allowed_keys:
-            value = getattr(self, "_" + k)
+            value = getattr(self, f"_{k}")
             if value is not None:
                 val[k] = value
         return val

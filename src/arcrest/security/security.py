@@ -71,7 +71,7 @@ class CommunityMapsSecurityHandler(abstract.BaseSecurityHandler):
     def _generateForTokenSecurity(self):
         """ generates a token for a feature service """
         agolToken = self._agolSecurityHandler.token
-        url = self._url + "/getProxyUserToken"
+        url = f"{self._url}/getProxyUserToken"
         params = {"token" : self._agolSecurityHandler.token,
                   "contributorUid" : self._contributionUID}
         res = self._post(url=url, param_dict=params,
@@ -83,7 +83,7 @@ class CommunityMapsSecurityHandler(abstract.BaseSecurityHandler):
     @property
     def _contributionUID(self):
         """"""
-        url = self._url + "/users/" + self._username
+        url = f"{self._url}/users/{self._username}"
         params = {'f': 'json'}
         res = self._get(url=url, param_dict=params)
         return res["ContributorUID"]
@@ -153,13 +153,13 @@ class LDAPSecurityHandler(abstract.BaseSecurityHandler):
 
         if org_url is not None and org_url != '':
             if not org_url.startswith('http://') and not org_url.startswith('https://'):
-                org_url = 'https://' + org_url
+                org_url = f'https://{org_url}'
             self._org_url = org_url
 
         if self._org_url.lower().find('/sharing/rest') > -1:
             self._url = self._org_url
         else:
-            self._url = self._org_url + "/sharing/rest"
+            self._url = f"{self._org_url}/sharing/rest"
 
         if self._url.startswith('http://'):
             self._surl = self._url.replace('http://', 'https://')
@@ -314,14 +314,13 @@ class LDAPSecurityHandler(abstract.BaseSecurityHandler):
                                           jar=self.cookiejar,
                                           handler=self.handler)
 
-        pssh = PortalServerSecurityHandler(tokenHandler=ptsh,
-                                           serverUrl=serverUrl,
-                                           referer=self._referer_url,
-                                           jar=self.cookiejar,
-                                           handler=self.handler)
-
-
-        return pssh
+        return PortalServerSecurityHandler(
+            tokenHandler=ptsh,
+            serverUrl=serverUrl,
+            referer=self._referer_url,
+            jar=self.cookiejar,
+            handler=self.handler,
+        )
 
 ########################################################################
 class NTLMSecurityHandler(LDAPSecurityHandler):
@@ -342,14 +341,13 @@ class NTLMSecurityHandler(LDAPSecurityHandler):
     @property
     def handler(self):
         """gets the security handler for the class"""
-        if hasNTLM:
-            if self._handler is None:
-                passman = request.HTTPPasswordMgrWithDefaultRealm()
-                passman.add_password(None, self._parsed_org_url, self._login_username, self._password)
-                self._handler = HTTPNtlmAuthHandler.HTTPNtlmAuthHandler(passman)
-            return self._handler
-        else:
+        if not hasNTLM:
             raise Exception("Missing Ntlm python package.")
+        if self._handler is None:
+            passman = request.HTTPPasswordMgrWithDefaultRealm()
+            passman.add_password(None, self._parsed_org_url, self._login_username, self._password)
+            self._handler = HTTPNtlmAuthHandler.HTTPNtlmAuthHandler(passman)
+        return self._handler
     #----------------------------------------------------------------------
     @property
     def cookiejar(self):
@@ -401,13 +399,13 @@ class PKISecurityHandler(abstract.BaseSecurityHandler):
         """ sets proper URLs for AGOL """
         if org_url is not None and org_url != '':
             if not org_url.startswith('http://') and not org_url.startswith('https://'):
-                org_url = 'https://' + org_url
+                org_url = f'https://{org_url}'
             self._org_url = org_url
 
             if self._org_url.lower().find('/sharing/rest') > -1:
                 self._url = self._org_url
             else:
-                self._url = self._org_url + "/sharing/rest"
+                self._url = f"{self._org_url}/sharing/rest"
 
             if self._url.startswith('http://'):
                 self._surl = self._url.replace('http://', 'https://')
@@ -421,7 +419,7 @@ class PKISecurityHandler(abstract.BaseSecurityHandler):
             parsed_org = urlparse(self._org_url)
             self._referer_url = parsed_org.netloc
 
-            url = '{}/portals/self'.format( self._url)
+            url = f'{self._url}/portals/self'
 
         parameters = {
             'f': 'json'
@@ -706,15 +704,15 @@ class OAuthSecurityHandler(abstract.BaseSecurityHandler):
         """ sets proper URLs for AGOL """
         if org_url is not None and org_url != '':
             if not org_url.startswith('http://') and not org_url.startswith('https://'):
-                org_url = 'http://' + org_url
+                org_url = f'http://{org_url}'
             self._org_url = org_url
         if not self._org_url.startswith('http://') and not self._org_url.startswith('https://'):
-            self._org_url = 'http://' + self._org_url
+            self._org_url = f'http://{self._org_url}'
 
         if self._org_url.lower().find('/sharing/rest') > -1:
             self._url = self._org_url
         else:
-            self._url = self._org_url + "/sharing/rest"
+            self._url = f"{self._org_url}/sharing/rest"
 
         if self._url.startswith('http://'):
             self._surl = self._url.replace('http://', 'https://')
@@ -722,7 +720,7 @@ class OAuthSecurityHandler(abstract.BaseSecurityHandler):
             self._surl = self._url
 
         if token_url is None:
-            self._token_url = self._surl + "/oauth2/token"
+            self._token_url = f"{self._surl}/oauth2/token"
         else:
             self._token_url = token_url
 
@@ -923,14 +921,14 @@ class ArcGISTokenSecurityHandler(abstract.BaseSecurityHandler):
         if self._org_url.lower().find('/sharing/rest') > -1:
             self._url = self._org_url
         else:
-            self._url = self._org_url + "/sharing/rest"
+            self._url = f"{self._org_url}/sharing/rest"
 
         if self._url.startswith('http://'):
             self._surl = self._url.replace('http://', 'https://')
         else:
             self._surl  =  self._url
 
-        url = '{}/portals/self'.format( self._url)
+        url = f'{self._url}/portals/self'
 
         parameters = {
             'f': 'json'
@@ -946,15 +944,17 @@ class ArcGISTokenSecurityHandler(abstract.BaseSecurityHandler):
                 self._username = portal_info['user']['username']
 
 
-        results = self._get(url= self._surl + '/portals/info',
-                               param_dict={'f':'json'},
-                               proxy_port=self._proxy_port,
-                               proxy_url=self._proxy_url)
+        results = self._get(
+            url=f'{self._surl}/portals/info',
+            param_dict={'f': 'json'},
+            proxy_port=self._proxy_port,
+            proxy_url=self._proxy_url,
+        )
         if 'authInfo' in results and 'tokenServicesUrl' in results['authInfo']:
 
             self._token_url = results['authInfo']['tokenServicesUrl']
         else:
-            self._token_url = self._surl  + '/generateToken'
+            self._token_url = f'{self._surl}/generateToken'
 
 
     _is_portal = None
@@ -1170,7 +1170,9 @@ class AGOLTokenSecurityHandler(abstract.BaseSecurityHandler):
             from ..manageorg import Administration
             admin = Administration(securityHandler=self)
             portalSelf = admin.portals.portalSelf
-            urlInfo=urlInfo._replace(netloc= "%s.%s" % (portalSelf.urlKey, portalSelf.customBaseUrl))
+            urlInfo = urlInfo._replace(
+                netloc=f"{portalSelf.urlKey}.{portalSelf.customBaseUrl}"
+            )
             org_url = urlunparse(urlInfo)
             del portalSelf
             del admin
@@ -1182,15 +1184,15 @@ class AGOLTokenSecurityHandler(abstract.BaseSecurityHandler):
         """ sets proper URLs for AGOL """
         if org_url is not None and org_url != '':
             if not org_url.startswith('http://') and not org_url.startswith('https://'):
-                org_url = 'http://' + org_url
+                org_url = f'http://{org_url}'
             self._org_url = org_url
         if not self._org_url.startswith('http://') and not self._org_url.startswith('https://'):
-            self._org_url = 'http://' + self._org_url
+            self._org_url = f'http://{self._org_url}'
 
         if self._org_url.lower().find('/sharing/rest') > -1:
             self._url = self._org_url
         else:
-            self._url = self._org_url + "/sharing/rest"
+            self._url = f"{self._org_url}/sharing/rest"
 
         if self._url.startswith('http://'):
             self._surl = self._url.replace('http://', 'https://')
@@ -1199,15 +1201,17 @@ class AGOLTokenSecurityHandler(abstract.BaseSecurityHandler):
 
         if token_url is None:
 
-            results = self._get(url= self._surl + '/info',
-                                   param_dict={'f':'json'},
-                                   proxy_port=self._proxy_port,
-                                   proxy_url=self._proxy_url)
+            results = self._get(
+                url=f'{self._surl}/info',
+                param_dict={'f': 'json'},
+                proxy_port=self._proxy_port,
+                proxy_url=self._proxy_url,
+            )
             if 'authInfo' in results and 'tokenServicesUrl' in results['authInfo']:
 
                 self._token_url = results['authInfo']['tokenServicesUrl']
             else:
-                self._token_url = self._surl  + '/generateToken'
+                self._token_url = f'{self._surl}/generateToken'
 
         else:
             self._token_url = token_url
@@ -1313,9 +1317,7 @@ class AGOLTokenSecurityHandler(abstract.BaseSecurityHandler):
     @property
     def token_url(self):
         """ returns the token url """
-        if self._token_url is None:
-            return self._default_token_url
-        return self._token_url
+        return self._default_token_url if self._token_url is None else self._token_url
     #----------------------------------------------------------------------
     @token_url.setter
     def token_url(self, value):
@@ -1400,14 +1402,12 @@ class AGOLTokenSecurityHandler(abstract.BaseSecurityHandler):
 
 
         self._token_expires_on = datetime.datetime.fromtimestamp(token['expires'] / 1000) - \
-            datetime.timedelta(seconds=10)
+                datetime.timedelta(seconds=10)
         if "token" not in token:
             self._token = None
             return None
         else:
-            httpPrefix = self._url
-            if token['ssl'] == True:
-                httpPrefix = self._surl
+            httpPrefix = self._surl if token['ssl'] == True else self._url
             self._token = token['token']
             return token['token'], httpPrefix
 #########################################################################
@@ -1447,19 +1447,18 @@ class AGSTokenSecurityHandler(abstract.BaseSecurityHandler):
         self._proxy_url = proxy_url
         self._referer_url = None
         self._token_expires_on = datetime.datetime.now() + datetime.timedelta(seconds=_defaultTokenExpiration)
-        if token_url is None and \
-           not org_url is None:
+        if token_url is None and org_url is not None:
 
             params = {"f":"json"}
             parts = urlparse(org_url)
             p = parts.path[1:].strip().split('/')[0]
-            url = "%s://%s/%s/rest/info" % (parts.scheme, parts.netloc, p)
+            url = f"{parts.scheme}://{parts.netloc}/{p}/rest/info"
             result = self._get(url=url, param_dict=params,
                                   securityHandler=None,
                                   proxy_url=proxy_url,
                                   proxy_port=proxy_port)
             if 'authInfo' in result and \
-               'tokenServicesUrl' in result['authInfo']:
+                   'tokenServicesUrl' in result['authInfo']:
                 self._token_url = result['authInfo']['tokenServicesUrl']
             else:
                 raise Exception("Cannot determine the token url, please pass that parameter.")
@@ -1572,7 +1571,7 @@ class AGSTokenSecurityHandler(abstract.BaseSecurityHandler):
                       'expiration': str(_defaultTokenExpiration),
                       'client': client,
                       'f': 'json'}
-        if not self._referer_url is None and client == "referer":
+        if self._referer_url is not None and client == "referer":
             query_dict['referer'] = self._referer_url
         if expiration is not None:
             query_dict['expiration'] = expiration
@@ -1666,16 +1665,16 @@ class PortalTokenSecurityHandler(abstract.BaseSecurityHandler):
         """ sets proper URLs for AGOL """
         if org_url is not None and org_url != '':
             if not org_url.startswith('http://') and not org_url.startswith('https://'):
-                org_url = 'http://' + org_url
+                org_url = f'http://{org_url}'
             self._org_url = org_url
         if not self._org_url.startswith('http://') and not self._org_url.startswith('https://'):
-            self._org_url = 'http://' + self._org_url
+            self._org_url = f'http://{self._org_url}'
 
         if self._org_url.lower().find('/sharing/rest') > -1:
             self._url = self._org_url
             self._org_url = str(self._org_url).replace('/sharing/rest','')
         else:
-            self._url = self._org_url + "/sharing/rest"
+            self._url = f"{self._org_url}/sharing/rest"
 
 
         if self._url.startswith('http://'):
@@ -1684,16 +1683,18 @@ class PortalTokenSecurityHandler(abstract.BaseSecurityHandler):
             self._surl  =  self._url
 
         if token_url is None:
-            results = self._get(url= self._surl + '/portals/info',
-                                param_dict={'f':'json'},
-                                securityHandler=None,
-                                proxy_port=self._proxy_port,
-                                proxy_url=self._proxy_url)
+            results = self._get(
+                url=f'{self._surl}/portals/info',
+                param_dict={'f': 'json'},
+                securityHandler=None,
+                proxy_port=self._proxy_port,
+                proxy_url=self._proxy_url,
+            )
             if 'authInfo' in results and 'tokenServicesUrl' in results['authInfo']:
 
                 self._token_url = results['authInfo']['tokenServicesUrl']
             else:
-                self._token_url = self._surl  + '/generateToken'
+                self._token_url = f'{self._surl}/generateToken'
 
         else:
             self._token_url = token_url
@@ -1953,26 +1954,18 @@ class PortalTokenSecurityHandler(abstract.BaseSecurityHandler):
         if self.cookiejar is not None:
             if secHandler is not None:
                 secHandler._method = "TOKEN"
-        if 'error' in token:
+        if 'error' in token or 'status' in token:
             self._token = None
             self._token_created_on = None
             self._token_expires_on = None
             self._expires_in = None
 
             return token
-        elif 'status' in token:
-            self._token = None
-            self._token_created_on = None
-            self._token_expires_on = None
-            self._expires_in = None
-            #print token['message']
-            return token
-
         else:
             self._token = token['token']
             self._token_created_on = datetime.datetime.now()
             self._token_expires_on = datetime.datetime.fromtimestamp(token['expires'] /1000) - \
-                datetime.timedelta(seconds=1)
+                    datetime.timedelta(seconds=1)
             self._expires_in = (self._token_expires_on - self._token_created_on).total_seconds()
             return token['token']
 
@@ -2001,9 +1994,6 @@ class PortalTokenSecurityHandler(abstract.BaseSecurityHandler):
         >>> print ms.mapName
         """
 
-        pssh = PortalServerSecurityHandler(tokenHandler=self,
-                                           serverUrl=serverUrl,
-                                           referer=self._referer_url)
-
-
-        return pssh
+        return PortalServerSecurityHandler(
+            tokenHandler=self, serverUrl=serverUrl, referer=self._referer_url
+        )

@@ -12,10 +12,7 @@ import types
 from .._abstract import abstract
 #----------------------------------------------------------------------
 def _date_handler(obj):
-    if isinstance(obj, datetime.datetime):
-        return local_time_to_online(obj)
-    else:
-        return obj
+    return local_time_to_online(obj) if isinstance(obj, datetime.datetime) else obj
 ########################################################################
 class SpatialReference(abstract.AbstractGeometry):
     """ creates a spatial reference instance """
@@ -47,7 +44,7 @@ class SpatialReference(abstract.AbstractGeometry):
     @property
     def asDictionary(self):
         """returns the wkid id for use in json calls"""
-        if self._wkid == None and self._wkt is not None:
+        if self._wkid is None and self._wkt is not None:
             return {"wkt": self._wkt}
         else:
             return {"wkid": self._wkid}
@@ -55,7 +52,7 @@ class SpatialReference(abstract.AbstractGeometry):
     @property
     def value(self):
         """returns the wkid id for use in json calls"""
-        if self._wkid == None and self._wkt is not None:
+        if self._wkid is None and self._wkt is not None:
             return {"wkt": self._wkt}
         else:
             return {"wkid": self._wkid}
@@ -93,9 +90,9 @@ class Point(abstract.AbstractGeometry):
 
         self._wkid = wkid
         self._wkt = wkt
-        if not z is None:
+        if z is not None:
             self._z = float(z)
-        if not m is None:
+        if m is not None:
             self._m = m
     #----------------------------------------------------------------------
     def __str__(self):
@@ -106,7 +103,7 @@ class Point(abstract.AbstractGeometry):
     @property
     def spatialReference(self):
         """returns the geometry spatial reference"""
-        if self._wkid == None and self._wkt is not None:
+        if self._wkid is None and self._wkt is not None:
             return {"wkt": self._wkt}
         else:
             return {"wkid": self._wkid}
@@ -141,9 +138,9 @@ class Point(abstract.AbstractGeometry):
                     "y" : self._y,
                     "spatialReference" : self.spatialReference
                     }
-        if not self._z is None:
+        if self._z is not None:
             template['z'] = self._z
-        if not self._m is None:
+        if self._m is not None:
             template['z'] = self._m
         return template
     #----------------------------------------------------------------------
@@ -151,9 +148,9 @@ class Point(abstract.AbstractGeometry):
     def asList(self):
         """ returns a Point value as a list of [x,y,<z>,<m>] """
         base = [self._x, self._y]
-        if not self._z is None:
+        if self._z is not None:
             base.append(self._z)
-        elif not self._m is None:
+        elif self._m is not None:
             base.append(self._m)
         return base
     #----------------------------------------------------------------------
@@ -242,18 +239,22 @@ class MultiPoint(abstract.AbstractGeometry):
             feature_geom = []
             fPart = []
             for part in geom:
-                fPart = []
-                for pnt in part:
-                    fPart.append(Point(coord=[pnt.X, pnt.Y],
-                          wkid=geom.spatialReference.factoryCode,
-                          z=pnt.Z, m=pnt.M))
+                fPart = [
+                    Point(
+                        coord=[pnt.X, pnt.Y],
+                        wkid=geom.spatialReference.factoryCode,
+                        z=pnt.Z,
+                        m=pnt.M,
+                    )
+                    for pnt in part
+                ]
                 feature_geom.append(fPart)
             return feature_geom
     #----------------------------------------------------------------------
     @property
     def spatialReference(self):
         """returns the geometry spatial reference"""
-        if self._wkid == None and self._wkt is not None:
+        if self._wkid is None and self._wkt is not None:
             return {"wkt": self._wkt}
         else:
             return {"wkid": self._wkid}
@@ -327,32 +328,33 @@ class Polyline(abstract.AbstractGeometry):
     #----------------------------------------------------------------------
     def __geomToPointList(self, geom):
         """ converts a geometry object to a common.Geometry object """
-        if arcpyFound and isinstance(geom, arcpy.Polyline):
-            feature_geom = []
+        if not arcpyFound or not isinstance(geom, arcpy.Polyline):
+            return
+        feature_geom = []
+        fPart = []
+        wkt = None
+        wkid = None
+        for part in geom:
             fPart = []
-            wkt = None
-            wkid = None
-            for part in geom:
-                fPart = []
-                for pnt in part:
-                    if geom.spatialReference is None:
-                        if self._wkid is None and self._wkt is not None:
-                            wkt = self._wkt
-                        else:
-                            wkid = self._wkid
+            for pnt in part:
+                if geom.spatialReference is None:
+                    if self._wkid is None and self._wkt is not None:
+                        wkt = self._wkt
                     else:
-                        wkid = geom.spatialReference.factoryCode
-                    fPart.append(Point(coord=[pnt.X, pnt.Y],
-                          wkid=wkid,
-                          wkt=wkt,
-                          z=pnt.Z, m=pnt.M))
-                feature_geom.append(fPart)
-            return feature_geom
+                        wkid = self._wkid
+                else:
+                    wkid = geom.spatialReference.factoryCode
+                fPart.append(Point(coord=[pnt.X, pnt.Y],
+                      wkid=wkid,
+                      wkt=wkt,
+                      z=pnt.Z, m=pnt.M))
+            feature_geom.append(fPart)
+        return feature_geom
     #----------------------------------------------------------------------
     @property
     def spatialReference(self):
         """returns the geometry spatial reference"""
-        if self._wkid == None and self._wkt is not None:
+        if self._wkid is None and self._wkt is not None:
             return {"wkt": self._wkt}
         else:
             return {"wkid": self._wkid}
@@ -391,9 +393,7 @@ class Polyline(abstract.AbstractGeometry):
                 "spatialReference" : self.spatialReference
             }
             for part in self._paths:
-                lpart = []
-                for pt in part:
-                    lpart.append(pt.asList)
+                lpart = [pt.asList for pt in part]
                 template['paths'].append(lpart)
                 del lpart
             self._dict = template
@@ -462,7 +462,7 @@ class Polygon(abstract.AbstractGeometry):
     @property
     def spatialReference(self):
         """returns the geometry spatial reference"""
-        if self._wkid == None and self._wkt is not None:
+        if self._wkid is None and self._wkt is not None:
             return {"wkt": self._wkt}
         else:
             return {"wkid": self._wkid}
@@ -549,7 +549,7 @@ class Envelope(abstract.AbstractGeometry):
     @property
     def spatialReference(self):
         """returns the geometry spatial reference"""
-        if self._wkid == None and self._wkt is not None:
+        if self._wkid is None and self._wkt is not None:
             return {"wkt": self._wkt}
         else:
             return {"wkid": self._wkid}

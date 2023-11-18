@@ -56,10 +56,10 @@ class Services(BaseAGSServer):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                     if not attr.startswith('__') and \
-                    not attr.startswith('_')]
+                        not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented manageags.services.")
             del k
@@ -87,8 +87,7 @@ class Services(BaseAGSServer):
     def folderName(self, folder):
         """gets/set the current folder"""
 
-        if folder == "" or\
-             folder == "/":
+        if folder in ["", "/"]:
             self._currentURL = self._url
             self._services = None
             self._description = None
@@ -97,7 +96,7 @@ class Services(BaseAGSServer):
             self.__init()
             self._folderName = folder
         elif folder in self.folders:
-            self._currentURL = self._url + "/%s" % folder
+            self._currentURL = f"{self._url}/{folder}"
             self._services = None
             self._description = None
             self._folderName = None
@@ -149,7 +148,7 @@ class Services(BaseAGSServer):
                                  proxy_port=self._proxy_port)
         if "services" in json_dict.keys():
             for s in json_dict['services']:
-                uURL = self._currentURL + "/%s.%s" % (s['serviceName'], s['type'])
+                uURL = f"{self._currentURL}/{s['serviceName']}.{s['type']}"
                 self._services.append(
                     AGSService(url=uURL,
                                securityHandler=self._securityHandler,
@@ -178,7 +177,7 @@ class Services(BaseAGSServer):
         lower_types = [l.lower() for l in service_type.split(',')]
         for v in lower_types:
             if v.upper() not in allowed_service_types:
-                return {"message" : "%s is not an allowed service type." % v}
+                return {"message": f"{v} is not an allowed service type."}
         params = {
             "f" : "json"
         }
@@ -186,10 +185,7 @@ class Services(BaseAGSServer):
         folders = self.folders
         baseURL = self._url
         for folder in folders:
-            if folder == "/":
-                url = baseURL
-            else:
-                url = baseURL + "/%s" % folder
+            url = baseURL if folder == "/" else f"{baseURL}/{folder}"
             res = self._get(url, params,
                                securityHandler=self._securityHandler,
                                proxy_url=self._proxy_url,
@@ -197,12 +193,10 @@ class Services(BaseAGSServer):
             if "services" in res:
                 for service in res['services']:
                     if service_type == "*":
-                        service['URL'] = url + "/%s.%s" % (service['serviceName'],
-                                                           service['type'])
+                        service['URL'] = f"{url}/{service['serviceName']}.{service['type']}"
                         type_services.append(service)
                     if service['type'].lower() in lower_types:
-                        service['URL'] = url + "/%s.%s" % (service['serviceName'],
-                                                           service_type)
+                        service['URL'] = f"{url}/{service['serviceName']}.{service_type}"
                         type_services.append(service)
                     del service
             del res
@@ -221,9 +215,9 @@ class Services(BaseAGSServer):
               JSON message as dictionary
         """
         if folder is not None:
-            uURL = self._url + "/%s/%s" % (folder, "/permissions/add")
+            uURL = f"{self._url}/{folder}//permissions/add"
         else:
-            uURL = self._url + "/permissions/add"
+            uURL = f"{self._url}/permissions/add"
         params = {
             "f" : "json",
             "principal" : principal,
@@ -242,7 +236,7 @@ class Services(BaseAGSServer):
            Output:
               JSON Message as Dictionary
         """
-        uURL = self._url + "/%s/permissions" % folderName
+        uURL = f"{self._url}/{folderName}/permissions"
         params = {
             "f" : "json",
         }
@@ -260,7 +254,7 @@ class Services(BaseAGSServer):
            Output:
               JSON Message as Dictionary
         """
-        uURL = self._url + "/permissions/clean"
+        uURL = f"{self._url}/permissions/clean"
         params = {
             "f" : "json",
             "principal" : principal
@@ -284,7 +278,7 @@ class Services(BaseAGSServer):
             "folderName" : folderName,
             "description" : description
         }
-        uURL = self._url + "/createFolder"
+        uURL = f"{self._url}/createFolder"
         return self._post(url=uURL, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -298,11 +292,11 @@ class Services(BaseAGSServer):
            Output:
               JSON message as dictionary
         """
-        params = {
-            "f" : "json"
-        }
         if folderName in self.folders:
-            uURL = self._url + "/%s/deleteFolder" % folderName
+            uURL = f"{self._url}/{folderName}/deleteFolder"
+            params = {
+                "f" : "json"
+            }
             return self._post(url=uURL, param_dict=params,
                                  securityHandler=self._securityHandler,
                                  proxy_url=self._proxy_url,
@@ -322,12 +316,9 @@ class Services(BaseAGSServer):
               JSON message as dictionary
         """
         if folder is None:
-            uURL = self._url + "/%s.%s/delete" % (serviceName,
-                                                  serviceType)
+            uURL = f"{self._url}/{serviceName}.{serviceType}/delete"
         else:
-            uURL = self._url + "/%s/%s.%s/delete" % (folder,
-                                                     serviceName,
-                                                     serviceType)
+            uURL = f"{self._url}/{folder}/{serviceName}.{serviceType}/delete"
         params = {
             "f" : "json"
         }
@@ -345,9 +336,9 @@ class Services(BaseAGSServer):
                  "instances", "iteminfo",
                  "properties"]
         if folder is None:
-            uURL = self._url + "/report"
+            uURL = f"{self._url}/report"
         else:
-            uURL = self._url + "/%s/report" % folder
+            uURL = f"{self._url}/{folder}/report"
         params = {
             "f" : "json",
             "parameters" : items
@@ -363,7 +354,7 @@ class Services(BaseAGSServer):
         params = {
             "f" : "json"
         }
-        uURL = self._url + "/types"
+        uURL = f"{self._url}/types"
         return self._get(url=uURL,
                             param_dict=params,
                             securityHandler=self._securityHandler,
@@ -390,9 +381,9 @@ class Services(BaseAGSServer):
             "serviceNewName" : serviceNewName
         }
         if folder is None:
-            uURL = self._url + "/renameService"
+            uURL = f"{self._url}/renameService"
         else:
-            uURL = self._url + "/%s/renameService" % folder
+            uURL = f"{self._url}/{folder}/renameService"
         return self._post(url=uURL, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -403,7 +394,7 @@ class Services(BaseAGSServer):
         Creates a new GIS service in the folder. A service is created by
         submitting a JSON representation of the service to this operation.
         """
-        url = self._url + "/createService"
+        url = f"{self._url}/createService"
         params = {
             "f" : "json"
         }
@@ -437,7 +428,7 @@ class Services(BaseAGSServer):
                           "type" : "MapServer"
                         }]
         """
-        url = self._url + "/stopServices"
+        url = f"{self._url}/stopServices"
         if isinstance(services, dict):
             services = [services]
         elif isinstance(services, (list, tuple)):
@@ -476,7 +467,7 @@ class Services(BaseAGSServer):
                           "type" : "MapServer"
                         }]
         """
-        url = self._url + "/startServices"
+        url = f"{self._url}/startServices"
         if isinstance(services, dict):
             services = [services]
         elif isinstance(services, (list, tuple)):
@@ -509,11 +500,11 @@ class Services(BaseAGSServer):
            webEncrypted - boolean to indicate if the services are
             accessible over SSL only.
         """
-        url = self._url + "/editFolder"
+        url = f"{self._url}/editFolder"
         params = {
-            "f" : "json",
-            "webEncrypted" : webEncrypted,
-            "description" : "%s" % description
+            "f": "json",
+            "webEncrypted": webEncrypted,
+            "description": f"{description}",
         }
         return self._post(url=url,
                              param_dict=params,
@@ -538,7 +529,7 @@ class Services(BaseAGSServer):
                 "GEODATASERVER", "GEOCODESERVER"
         """
 
-        url = self._url + "/exists"
+        url = f"{self._url}/exists"
         params = {
             "f" : "json",
             "folderName" : folderName,
@@ -626,7 +617,7 @@ class AGSService(BaseAGSServer):
         self._json_dict = json_dict
         attributes = [attr for attr in dir(self)
                     if not attr.startswith('__') and \
-                    not attr.startswith('_')]
+                        not attr.startswith('_')]
         for k,v in json_dict.items():
             if k.lower() == "extensions":
                 self._extensions = []
@@ -634,7 +625,7 @@ class AGSService(BaseAGSServer):
                     self._extensions.append(Extension.fromJSON(ext))
                     del ext
             elif k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in manageags.AGSService.")
             del k
@@ -686,8 +677,7 @@ class AGSService(BaseAGSServer):
         """class iterator which yields a key/value pair"""
         if self._json_dict is None:
             self.__init()
-        for k,v in self._json_dict.items():
-            yield (k,v)
+        yield from self._json_dict.items()
     #----------------------------------------------------------------------
     def jsonProperties(self):
         """returns the jsonProperties"""
@@ -892,7 +882,7 @@ class AGSService(BaseAGSServer):
         params = {
             "f" : "json"
         }
-        uURL = self._url + "/start"
+        uURL = f"{self._url}/start"
         return self._post(url=uURL, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -903,7 +893,7 @@ class AGSService(BaseAGSServer):
         params = {
             "f" : "json"
         }
-        uURL = self._url + "/stop"
+        uURL = f"{self._url}/stop"
         return self._post(url=uURL, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -920,7 +910,7 @@ class AGSService(BaseAGSServer):
         params = {
             "f" : "json",
         }
-        uURL = self._url + "/delete"
+        uURL = f"{self._url}/delete"
         return self._post(url=uURL, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -932,7 +922,7 @@ class AGSService(BaseAGSServer):
         params = {
             "f" : "json",
         }
-        uURL = self._url + "/status"
+        uURL = f"{self._url}/status"
         return self._get(url=uURL, param_dict=params,
                             securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -944,7 +934,7 @@ class AGSService(BaseAGSServer):
         params = {
             "f" : "json"
         }
-        uURL = self._url + "/statistics"
+        uURL = f"{self._url}/statistics"
         return self._get(url=uURL, param_dict=params,
                             securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -956,7 +946,7 @@ class AGSService(BaseAGSServer):
         params = {
             "f" : "json"
         }
-        uURL = self._url + "/permissions"
+        uURL = f"{self._url}/permissions"
         return self._get(url=uURL, param_dict=params,
                             securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -968,7 +958,7 @@ class AGSService(BaseAGSServer):
         params = {
             "f" : "json"
         }
-        uURL = self._url + "/iteminfo"
+        uURL = f"{self._url}/iteminfo"
         return self._get(url=uURL, param_dict=params,
                             securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -983,13 +973,12 @@ class AGSService(BaseAGSServer):
         Output:
            json as dictionary
         """
-        files = {}
-        url = self._url + "/iteminfo/upload"
+        url = f"{self._url}/iteminfo/upload"
         params = {
             "f" : "json",
             "folder" : folder
         }
-        files['file'] = filePath
+        files = {'file': filePath}
         return self._post(url=url,
                           param_dict=params,
                           files=files,
@@ -1009,7 +998,7 @@ class AGSService(BaseAGSServer):
         Output:
            json as dictionary
         """
-        url = self._url + "/iteminfo/edit"
+        url = f"{self._url}/iteminfo/edit"
         params = {
             "f" : "json",
             "serviceItemInfo" : json.dumps(json_dict)
@@ -1038,7 +1027,7 @@ class AGSService(BaseAGSServer):
             xml.etree.ElementTree.ElementTree type if fileType is xml.
         """
 
-        url = self._url + "/iteminfo/manifest/manifest.%s" % fileType
+        url = f"{self._url}/iteminfo/manifest/manifest.{fileType}"
         params = {}
         f = self._get(url=url,
                       param_dict=params,
@@ -1063,7 +1052,7 @@ class AGSService(BaseAGSServer):
            Output:
               JSON message as dictionary
         """
-        uURL = self._url + "/permissions/add"
+        uURL = f"{self._url}/permissions/add"
         params = {
             "f" : "json",
             "principal" : principal,
@@ -1081,7 +1070,7 @@ class AGSService(BaseAGSServer):
         service properties. Editing a service causes the service to be
         restarted with updated properties.
         """
-        url = self._url + "/edit"
+        url = f"{self._url}/edit"
         params = {
             "f" : "json"
         }

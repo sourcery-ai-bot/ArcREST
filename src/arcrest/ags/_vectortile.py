@@ -65,10 +65,10 @@ class VectorTileService(BaseAGSServer):
         self._json = json.dumps(self._json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, v)
+                setattr(self, f"_{k}", v)
             else:
                 setattr(self, k, v)
     #--------------------------------------------------------------------------

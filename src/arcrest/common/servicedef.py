@@ -42,7 +42,7 @@ if six.PY2:
         """
         if arcpyFound == False:
             return
-        
+
         if not os.path.isabs(mxd_path):
             sciptPath = os.getcwd()
             mxd_path = os.path.join(sciptPath,mxd_path)
@@ -51,10 +51,8 @@ if six.PY2:
         sddraftFolder = env.scratchFolder + os.sep + "draft"
         sdFolder = env.scratchFolder + os.sep + "sd"
         sddraft = sddraftFolder + os.sep + service_name + ".sddraft"
-        sd = sdFolder + os.sep + "%s.sd" % service_name
+        sd = sdFolder + os.sep + f"{service_name}.sd"
         mxd = _prep_mxd(mxd)
-
-        res = {}
 
         if service_name is None:
             service_name = mxd.title.strip().replace(' ','_')
@@ -64,17 +62,13 @@ if six.PY2:
         if description is None:
             description = mxd.description.strip()
 
-        if os.path.isdir(sddraftFolder) == False:
-            os.makedirs(sddraftFolder)
-        else:
+        if os.path.isdir(sddraftFolder) != False:
             shutil.rmtree(sddraftFolder, ignore_errors=True)
-            os.makedirs(sddraftFolder)
+        os.makedirs(sddraftFolder)
         if os.path.isfile(sddraft):
             os.remove(sddraft)
 
-        res['service_name'] = service_name
-        res['tags'] = tags
-        res['description'] = description
+        res = {'service_name': service_name, 'tags': tags, 'description': description}
         analysis = mapping.CreateMapSDDraft(map_document=mxd,
                                            out_sddraft=sddraft,
                                            service_name=service_name,
@@ -92,9 +86,7 @@ if six.PY2:
         analysis = mapping.AnalyzeForSD(sddraft)
         if os.path.isdir(sdFolder):
             shutil.rmtree(sdFolder, ignore_errors=True)
-            os.makedirs(sdFolder)
-        else:
-            os.makedirs(sdFolder)
+        os.makedirs(sdFolder)
         if analysis['errors'] == {}:
             # Stage the service
             arcpy.StageService_server(sddraft, sd)
@@ -119,7 +111,7 @@ if six.PY2:
 
         root_elem = doc.getroot()
         if root_elem.tag != "SVCManifest":
-            raise ValueError("Root tag is incorrect. Is {} a .sddraft file?".format(sddraft))
+            raise ValueError(f"Root tag is incorrect. Is {sddraft} a .sddraft file?")
 
         # The following 6 code pieces modify the SDDraft from a new MapService
         # with caching capabilities to a FeatureService with Query,Create,
@@ -201,6 +193,6 @@ if six.PY2:
         if mxd.title.strip() == "":
             mxd.title = "NA"
             changed = True
-        if changed == True:
+        if changed:
             mxd.save()
         return mxd

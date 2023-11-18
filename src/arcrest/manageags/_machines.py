@@ -55,19 +55,21 @@ class Machines(BaseAGSServer):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                     if not attr.startswith('__') and \
-                    not attr.startswith('_')]
+                        not attr.startswith('_')]
         for k,v in json_dict.items():
             if k == "machines":
                 self._machines = []
-                for m in v:
-                    self._machines.append(
-                        Machine(url=self._url +"/%s" % m['machineName'],
-                                securityHandler=self._securityHandler,
-                                proxy_url=self._proxy_url,
-                                proxy_port=self._proxy_port)
+                self._machines.extend(
+                    Machine(
+                        url=f"{self._url}/{m['machineName']}",
+                        securityHandler=self._securityHandler,
+                        proxy_url=self._proxy_url,
+                        proxy_port=self._proxy_port,
                     )
+                    for m in v
+                )
             elif k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented for Machines")
             del k
@@ -105,7 +107,7 @@ class Machines(BaseAGSServer):
            Input:
               machineName - name of the box ex: SERVER.DOMAIN.COM
         """
-        url = self._url + "/%s" % machineName
+        url = f"{self._url}/{machineName}"
         return Machine(url=url,
                        securityHandler=self._securityHandler,
                        initialize=True,
@@ -134,7 +136,7 @@ class Machines(BaseAGSServer):
             "machineName" : machineName,
             "adminURL" : adminURL
         }
-        uURL = "%s/register" % self._url
+        uURL = f"{self._url}/register"
         return self._post(url=uURL, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_port=self._proxy_port,
@@ -161,7 +163,7 @@ class Machines(BaseAGSServer):
             "machineName" : machineName,
             "newMachineName" : newMachineName
         }
-        uURL = self._url + "/rename"
+        uURL = f"{self._url}/rename"
         return self._post(url=uURL, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_port=self._proxy_port,
@@ -234,10 +236,10 @@ class Machine(BaseAGSServer):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                     if not attr.startswith('__') and \
-                    not attr.startswith('_')]
+                        not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented for Machine")
             del k
@@ -252,7 +254,7 @@ class Machine(BaseAGSServer):
     @property
     def sslCertificates(self):
         """gets the SSL Certificates for a given machine"""
-        url = self._url + "/sslcertificates"
+        url = f"{self._url}/sslcertificates"
         params = {
             "f" : "json",
         }
@@ -264,7 +266,7 @@ class Machine(BaseAGSServer):
     #----------------------------------------------------------------------
     def getCertificate(self, certificate):
         """gets the SSL Certificates for a given machine"""
-        url = self._url + "/sslcertificates/%s" % certificate
+        url = f"{self._url}/sslcertificates/{certificate}"
         params = {
             "f" : "json",
         }
@@ -276,7 +278,7 @@ class Machine(BaseAGSServer):
     #----------------------------------------------------------------------
     def exportCertificate(self, certificate, folder):
         """gets the SSL Certificates for a given machine"""
-        url = self._url + "/sslcertificates/%s/export" % certificate
+        url = f"{self._url}/sslcertificates/{certificate}/export"
         params = {
             "f" : "json",
         }
@@ -286,9 +288,8 @@ class Machine(BaseAGSServer):
     #----------------------------------------------------------------------
     def importRootCertificate(self, alias, rootCACertificate):
         """This operation imports a certificate authority (CA)'s root and intermediate certificates into the keystore."""
-        url = self._url + "/sslcertificates/importRootOrIntermediate"
-        files = {}
-        files['rootCACertificate'] = rootCACertificate
+        url = f"{self._url}/sslcertificates/importRootOrIntermediate"
+        files = {'rootCACertificate': rootCACertificate}
         params = {
             "f" : "json",
             "alias" : alias
@@ -302,9 +303,8 @@ class Machine(BaseAGSServer):
     #----------------------------------------------------------------------
     def importExistingServerCertificate(self, alias, certPassword, certFile):
         """This operation imports an existing server certificate, stored in the PKCS #12 format, into the keystore."""
-        url = self._url + "/sslcertificates/importExistingServerCertificate"
-        files = {}
-        files['certFile'] = certFile
+        url = f"{self._url}/sslcertificates/importExistingServerCertificate"
+        files = {'certFile': certFile}
         params = {
             "f" : "json",
             "alias" : alias,
@@ -319,9 +319,8 @@ class Machine(BaseAGSServer):
     #----------------------------------------------------------------------
     def importCASignedCertificate(self, alias, caSignedCertificate):
         """This operation imports a certificate authority (CA)-signed SSL certificate into the key store."""
-        url = self._url + "/sslcertificates/importCASignedCertificate"
-        files = {}
-        files['caSignedCertificate'] = caSignedCertificate
+        url = f"{self._url}/sslcertificates/importCASignedCertificate"
+        files = {'caSignedCertificate': caSignedCertificate}
         params = {
             "f" : "json",
             "alias" : alias
@@ -420,7 +419,7 @@ class Machine(BaseAGSServer):
     @property
     def status(self):
         """ returns the state """
-        uURL = self._url + "/status"
+        uURL = f"{self._url}/status"
         params = {
             "f" : "json",
         }
@@ -434,7 +433,7 @@ class Machine(BaseAGSServer):
         params = {
             "f" : "json"
         }
-        uURL = self._url + "/start"
+        uURL = f"{self._url}/start"
         return self._post(url=uURL, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_port=self._proxy_port,
@@ -445,7 +444,7 @@ class Machine(BaseAGSServer):
         params = {
             "f" : "json"
         }
-        uURL = self._url + "/stop"
+        uURL = f"{self._url}/stop"
         return self._post(url=uURL, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_port=self._proxy_port,
@@ -467,7 +466,7 @@ class Machine(BaseAGSServer):
         params = {
             "f" : "json"
         }
-        uURL = self._url + "/start"
+        uURL = f"{self._url}/start"
         return self._post(url=uURL, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_port=self._proxy_port,

@@ -27,7 +27,7 @@ def featureclass_to_json(fc):
     if arcpyFound == False:
         raise Exception("ArcPy is required to use this function")
     desc = arcpy.Describe(fc)
-    if desc.dataType == "Table" or desc.dataType == "TableView":
+    if desc.dataType in ["Table", "TableView"]:
         return recordset_to_json(table=fc)
     else:
         return arcpy.FeatureSet(fc).JSON
@@ -60,17 +60,16 @@ def get_attachment_data(attachmentTable, sql,
         raise Exception("ArcPy is required to use this function")
     ret_rows = []
     with arcpy.da.SearchCursor(attachmentTable,
-                               [nameField,
-                                blobField,
-                                contentTypeField,
-                                rel_object_field],
-                               where_clause=sql) as rows:
+                                   [nameField,
+                                    blobField,
+                                    contentTypeField,
+                                    rel_object_field],
+                                   where_clause=sql) as rows:
         for row in rows:
             temp_f = os.environ['temp'] + os.sep + row[0]
-            writer = open(temp_f,'wb')
-            writer.write(row[1])
-            writer.flush()
-            writer.close()
+            with open(temp_f,'wb') as writer:
+                writer.write(row[1])
+                writer.flush()
             del writer
             ret_rows.append({
                 "name" : row[0],
@@ -87,10 +86,10 @@ def get_records_with_attachments(attachment_table, rel_object_field="REL_OBJECTI
         raise Exception("ArcPy is required to use this function")
     OIDs = []
     with arcpy.da.SearchCursor(attachment_table,
-                               [rel_object_field]) as rows:
+                                   [rel_object_field]) as rows:
         for row in rows:
-            if not str(row[0]) in OIDs:
-                OIDs.append("%s" % str(row[0]))
+            if str(row[0]) not in OIDs:
+                OIDs.append(f"{str(row[0])}")
             del row
     del rows
     return OIDs
@@ -100,9 +99,7 @@ def get_OID_field(fs):
     if arcpyFound == False:
         raise Exception("ArcPy is required to use this function")
     desc = arcpy.Describe(fs)
-    if desc.hasOID:
-        return desc.OIDFieldName
-    return None
+    return desc.OIDFieldName if desc.hasOID else None
 #----------------------------------------------------------------------
 def merge_feature_class(merges, out_fc, cleanUp=True):
     """ merges featureclass into a single feature class """
@@ -203,9 +200,7 @@ def insert_rows(fc,
             icur = None
             del icur
             del fields
-        return fc
-    else:
-        return fc
+    return fc
 #----------------------------------------------------------------------
 def create_feature_class(out_path,
                          out_name,
@@ -237,12 +232,10 @@ def lookUpGeometry(geom_type):
         Output:
            name of python geometry type for create feature class function
     """
-    if geom_type == "esriGeometryPoint":
-        return "POINT"
+    if geom_type == "esriGeometryLine":
+        return "POLYLINE"
     elif geom_type == "esriGeometryPolygon":
         return "POLYGON"
-    elif geom_type == "esriGeometryLine":
-        return "POLYLINE"
     else:
         return "POINT"
 #----------------------------------------------------------------------
@@ -253,26 +246,22 @@ def lookUpFieldType(field_type):
         Output:
            Python field type as string
     """
-    if field_type == "esriFieldTypeDate":
+    if field_type == "esriFieldTypeBlob":
+        return "BLOB"
+    elif field_type == "esriFieldTypeDate":
         return "DATE"
-    elif field_type == "esriFieldTypeInteger":
-        return "LONG"
-    elif field_type == "esriFieldTypeSmallInteger":
-        return "SHORT"
     elif field_type == "esriFieldTypeDouble":
         return "DOUBLE"
-    elif field_type == "esriFieldTypeString":
-        return "TEXT"
-    elif field_type == "esriFieldTypeBlob":
-        return "BLOB"
-    elif field_type == "esriFieldTypeSingle":
-        return "FLOAT"
-    elif field_type == "esriFieldTypeRaster":
-        return "RASTER"
     elif field_type == "esriFieldTypeGUID":
         return "GUID"
-    elif field_type == "esriFieldTypeGlobalID":
-        return "TEXT"
+    elif field_type == "esriFieldTypeInteger":
+        return "LONG"
+    elif field_type == "esriFieldTypeRaster":
+        return "RASTER"
+    elif field_type == "esriFieldTypeSingle":
+        return "FLOAT"
+    elif field_type == "esriFieldTypeSmallInteger":
+        return "SHORT"
     else:
         return "TEXT"
 #----------------------------------------------------------------------

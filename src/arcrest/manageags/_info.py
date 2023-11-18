@@ -49,10 +49,10 @@ class Info(BaseAGSServer):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                     if not attr.startswith('__') and \
-                    not attr.startswith('_')]
+                        not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in Info.")
             del k
@@ -120,7 +120,7 @@ class Info(BaseAGSServer):
         unhealthy (unavailable) site will return messaging other than HTTP
         200.
         """
-        url = self._url + "/healthCheck"
+        url = f"{self._url}/healthCheck"
         params = {
             "f" : "json"
         }
@@ -135,7 +135,7 @@ class Info(BaseAGSServer):
            Returns an enumeration of all the time zones of which the server
            is aware. This is used by the GIS service publishing tools
         """
-        url = self._url + "/getAvailableTimeZones"
+        url = f"{self._url}/getAvailableTimeZones"
         params = {
             "f" : "json"
         }

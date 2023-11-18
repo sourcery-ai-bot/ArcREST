@@ -184,7 +184,7 @@ def parse_NTLM_CHALLENGE_MESSAGE(msg2):
     msg2 = base64.b64decode(msg2)
 
     # TODO - this variable isn't used
-    Signature = msg2[0:8]  # noqa
+    Signature = msg2[:8]
 
     msg_type = struct.unpack("<I", msg2[8:12])[0]
     assert (msg_type == 2)
@@ -251,7 +251,7 @@ def create_NTLM_AUTHENTICATE_MESSAGE(nonce, user, domain, password, NegotiateFla
     if is_NegotiateExtendedSecurity:
         pwhash = create_NT_hashed_password_v1(password, UserName, DomainName)
         ClientChallenge = b""
-        for i in range(8):
+        for _ in range(8):
             ClientChallenge += six.int2byte(random.getrandbits(8))
 
         (NtChallengeResponse, LmChallengeResponse) = ntlm2sr_calc_resp(pwhash, nonce,
@@ -334,14 +334,14 @@ def calc_resp(password_hash, server_challenge):
     password_hash += b'\0' * (21 - len(password_hash))
 
     res = b''
-    dobj = des.DES(password_hash[0:7])
-    res = res + dobj.encrypt(server_challenge[0:8])
+    dobj = des.DES(password_hash[:7])
+    res += dobj.encrypt(server_challenge[:8])
 
     dobj = des.DES(password_hash[7:14])
-    res = res + dobj.encrypt(server_challenge[0:8])
+    res = res + dobj.encrypt(server_challenge[:8])
 
     dobj = des.DES(password_hash[14:21])
-    res = res + dobj.encrypt(server_challenge[0:8])
+    res = res + dobj.encrypt(server_challenge[:8])
     return res
 
 
@@ -365,7 +365,7 @@ def ntlm2sr_calc_resp(ResponseKeyNT, ServerChallenge, ClientChallenge=b'\xaa' * 
 
     LmChallengeResponse = ClientChallenge + b'\0' * 16
     sess = hashlib.md5(ServerChallenge + ClientChallenge).digest()
-    NtChallengeResponse = calc_resp(ResponseKeyNT, sess[0:8])
+    NtChallengeResponse = calc_resp(ResponseKeyNT, sess[:8])
     return (NtChallengeResponse, LmChallengeResponse)
 
 
@@ -379,14 +379,14 @@ def create_LM_hashed_password_v1(passwd):
     # fix the password length to 14 bytes
     passwd = passwd.upper()
     lm_pw = passwd + '\0' * (14 - len(passwd))
-    lm_pw = passwd[0:14]
+    lm_pw = passwd[:14]
 
     # do hash
     magic_str = b"KGS!@#$%"  # page 57 in [MS-NLMP]
 
     res = b''
-    dobj = des.DES(lm_pw[0:7])
-    res = res + dobj.encrypt(magic_str)
+    dobj = des.DES(lm_pw[:7])
+    res += dobj.encrypt(magic_str)
 
     dobj = des.DES(lm_pw[7:14])
     res = res + dobj.encrypt(magic_str)

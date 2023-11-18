@@ -32,17 +32,12 @@ class Uploads(BaseAGSServer):
                  proxy_url=None,
                  proxy_port=None):
         """Constructor"""
-        if url.lower().endswith('uploads'):
-            self._url = url
-        else:
-            self._url = url + "/uploads"
+        self._url = url if url.lower().endswith('uploads') else f"{url}/uploads"
         self._securityHandler = securityHandler
-        if not securityHandler is None:
+        if securityHandler is not None:
             self._referer_url = securityHandler.referer_url
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
-        if initialize:
-            pass
     #----------------------------------------------------------------------
     @property
     def info(self):
@@ -50,7 +45,7 @@ class Uploads(BaseAGSServer):
         The info resource returns the maxUploadFileSize property of a
         service.
         """
-        url = self._url + "/info"
+        url = f"{self._url}/info"
         params = {
             "f" : "json"
         }
@@ -80,9 +75,8 @@ class Uploads(BaseAGSServer):
             "f" : "json"}
         if description is not None:
             params['description'] = str(description)
-        url = self._url + "/upload"
-        files = {}
-        files['file'] = filePath
+        url = f"{self._url}/upload"
+        files = {'file': filePath}
         return self._post(url=url,
                           param_dict=params,
                           files=files,
@@ -97,7 +91,7 @@ class Uploads(BaseAGSServer):
         Inputs:
            itemID - unique ID of item
         """
-        url = self._url + "/%s/delete" % itemID
+        url = f"{self._url}/{itemID}/delete"
         params = {
             "f" : "json"
         }
@@ -116,11 +110,11 @@ class Uploads(BaseAGSServer):
         """
         if os.path.isdir(savePath) == False:
             os.makedirs(savePath)
-        url = self._url + "/%s/download" % itemID
+        url = f"{self._url}/{itemID}/download"
         params = {
         }
         if len(params.keys()):
-            url =  url + "?%s" % urlencode(params)
+            url = f"{url}?{urlencode(params)}"
         return self._get(url=url,
                          param_dict=params,
                          out_folder=savePath,

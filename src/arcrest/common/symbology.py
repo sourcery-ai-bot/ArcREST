@@ -35,14 +35,13 @@ class SimpleMarkerSymbol(BaseSymbol):
         if style in self._styles:
             self._style = style
         else:
-            raise AttributeError("Invalid Style, items must be: %s" % ",".join(self._styles)
-                                 )
+            raise AttributeError(f'Invalid Style, items must be: {",".join(self._styles)}')
         self._color = color
         self._size = size
         self._angle = angle
         self._xoffset = xoffset
         self._yoffset = yoffset
-        if not outlineColor is None:
+        if outlineColor is not None:
             self._outline = {
                 "color" : outlineColor,
                 "width" : outlineWidth
@@ -128,29 +127,23 @@ class SimpleMarkerSymbol(BaseSymbol):
     @property
     def outlineWidth(self):
         """gets/sets the outlineWidth"""
-        if self._outline is None:
-            return None
-        return self._outline['width']
+        return None if self._outline is None else self._outline['width']
     #----------------------------------------------------------------------
     @outlineWidth.setter
     def outlineWidth(self, value):
         """gets/sets the outlineWidth"""
-        if isinstance(value, (int, float, long)) and \
-           not self._outline is None:
+        if isinstance(value, (int, float, long)) and self._outline is not None:
             self._outline['width'] = value
     #----------------------------------------------------------------------
     @property
     def outlineColor(self):
         """gets/sets the outlineColor"""
-        if self._outline is None:
-            return None
-        return self._outline['color']
+        return None if self._outline is None else self._outline['color']
     #----------------------------------------------------------------------
     @outlineColor.setter
     def outlineColor(self, value):
         """gets/sets the outlineColor"""
-        if isinstance(value, Color) and \
-           not self._outline is None:
+        if isinstance(value, Color) and self._outline is not None:
             self._outline['color'] = value
     #----------------------------------------------------------------------
     @property
@@ -269,13 +262,13 @@ class SimpleFillSymbol(BaseSymbol):
             self._color = color
         else:
             raise AttributeError("Invalid type: color must be type Color")
-        if not outline is None:
-            if isinstance(outline, SimpleLineSymbol):
-                self._outline = outline
-            else:
-                raise AttributeError("Invalid type: outline must be type SimpleLineSymbol")
-        else:
+        if outline is None:
             self._outline = None
+
+        elif isinstance(outline, SimpleLineSymbol):
+            self._outline = outline
+        else:
+            raise AttributeError("Invalid type: outline must be type SimpleLineSymbol")
     #----------------------------------------------------------------------
     @property
     def type(self):

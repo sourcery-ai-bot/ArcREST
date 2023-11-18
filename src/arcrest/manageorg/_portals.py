@@ -33,10 +33,7 @@ class Portals(BaseAGOLClass):
                  proxy_url=None,
                  proxy_port=None):
         """Constructor"""
-        if url.lower().endswith("/portals"):
-            self._url = url
-        else:
-            self._url = "%s/portals" % url
+        self._url = url if url.lower().endswith("/portals") else f"{url}/portals"
         self._securityHandler = securityHandler
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -49,7 +46,7 @@ class Portals(BaseAGOLClass):
     @property
     def regions(self):
         """gets the regions value"""
-        url = "%s/regions" % self.root
+        url = f"{self.root}/regions"
         params = {"f": "json"}
         return self._get(url=url,
                             param_dict=params,
@@ -59,7 +56,7 @@ class Portals(BaseAGOLClass):
     @property
     def languages(self):
         """returns the site's languages"""
-        url = "%s/languages" % self.root
+        url = f"{self.root}/languages"
         params = {'f': "json"}
         return self._get(url=url,
                             param_dict=params,
@@ -69,7 +66,7 @@ class Portals(BaseAGOLClass):
     @property
     def info(self):
         """gets the sharing api information"""
-        url = "%s/info" % self.root
+        url = f"{self.root}/info"
         params = {"f": "json"}
         return self._get(url=url,
                     param_dict=params,
@@ -81,7 +78,7 @@ class Portals(BaseAGOLClass):
         """The portal to which the current user belongs. This is an
         organizational portal if the user belongs to an organization or the
         default portal if the user does not belong to one"""
-        url = "%s/self" % self.root
+        url = f"{self.root}/self"
         return Portal(url=url,
                       securityHandler=self._securityHandler,
                       proxy_url=self._proxy_url,
@@ -92,7 +89,7 @@ class Portals(BaseAGOLClass):
         """returns a specific reference to a portal"""
         if portalID is None:
             portalID = self.portalSelf.id
-        url = "%s/%s" % (self.root, portalID)
+        url = f"{self.root}/{portalID}"
         return Portal(url=url,
                   securityHandler=self._securityHandler,
                   proxy_url=self._proxy_url,
@@ -216,7 +213,7 @@ class Portal(BaseAGOLClass):
         """Constructor"""
         self._url = url
         self._securityHandler = securityHandler
-        if not securityHandler is None:
+        if securityHandler is not None:
             self._referer_url = securityHandler.referer_url
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -237,20 +234,17 @@ class Portal(BaseAGOLClass):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 setattr(self, k, v)
                 print( k, " - attribute not implemented in Portal class.")
     #----------------------------------------------------------------------
     def _findPortalId(self):
         """gets the portal id for a site if not known."""
-        if not self.root.lower().endswith("/self"):
-            url = self.root + "/self"
-        else:
-            url = self.root
+        url = self.root if self.root.lower().endswith("/self") else f"{self.root}/self"
         params = {
             "f" : "json"
         }
@@ -258,9 +252,7 @@ class Portal(BaseAGOLClass):
                            securityHandler=self._securityHandler,
                            proxy_port=self._proxy_port,
                            proxy_url=self._proxy_url)
-        if 'id' in res:
-            return res['id']
-        return None
+        return res['id'] if 'id' in res else None
     @property
     def analysisLayersGroupQuery(self):
         if self._analysisLayersGroupQuery is None:
@@ -987,7 +979,7 @@ class Portal(BaseAGOLClass):
     @property
     def urls(self):
         """gets the urls for a portal"""
-        url = "%s/urls" % self.root
+        url = f"{self.root}/urls"
         params = {"f":"json"}
         return self._get(url=url,
                      param_dict=params,
@@ -1013,17 +1005,23 @@ class Portal(BaseAGOLClass):
         services = []
         for urlHost in res:
             if self.isPortal:
-                services.append(AGSAdministration(
-                    url='%s/admin' % urlHost,
-                    securityHandler=self._securityHandler,
-                    proxy_url=self._proxy_url,
-                    proxy_port=self._proxy_port))
+                services.append(
+                    AGSAdministration(
+                        url=f'{urlHost}/admin',
+                        securityHandler=self._securityHandler,
+                        proxy_url=self._proxy_url,
+                        proxy_port=self._proxy_port,
+                    )
+                )
             else:
-                services.append(Services(
-                    url='https://%s/%s/ArcGIS/admin' % (urlHost, self.portalId),
-                    securityHandler=self._securityHandler,
-                    proxy_url=self._proxy_url,
-                    proxy_port=self._proxy_port))
+                services.append(
+                    Services(
+                        url=f'https://{urlHost}/{self.portalId}/ArcGIS/admin',
+                        securityHandler=self._securityHandler,
+                        proxy_url=self._proxy_url,
+                        proxy_port=self._proxy_port,
+                    )
+                )
 
         return services
     # ---------------------------------------------------------------------
@@ -1046,18 +1044,15 @@ class Portal(BaseAGOLClass):
         else:
             res = urls['http']
         for https in res:
-            if ishttps:
-                scheme = "https"
-            else:
-                scheme = "http"
+            scheme = "https" if ishttps else "http"
             if self.isPortal == False:
-                url = "%s://%s/tiles/%s/arcgis/admin/services" % (scheme, https, self.portalId)
+                url = f"{scheme}://{https}/tiles/{self.portalId}/arcgis/admin/services"
                 services.append(Services(url=url,
                     securityHandler=self._securityHandler,
                     proxy_url=self._proxy_url,
                     proxy_port=self._proxy_port))
             else:
-                url = "%s/admin" % https
+                url = f"{https}/admin"
                 servers = self.servers
                 for server in servers.servers:
                     url = server.adminUrl
@@ -1077,7 +1072,7 @@ class Portal(BaseAGOLClass):
     @property
     def purchases(self):
         """gets the portal's purchases"""
-        url = "%s/purchases" % self.root
+        url = f"{self.root}/purchases"
         params = {"f":"json"}
         return self._get(url=url,
                             param_dict=params,
@@ -1088,7 +1083,7 @@ class Portal(BaseAGOLClass):
     @property
     def customers(self):
         """gets the site's customers"""
-        url = "%s/customers" % self.root
+        url = f"{self.root}/customers"
         params = {"f":"json"}
         return self._get(url=url,
                             param_dict=params,
@@ -1101,7 +1096,7 @@ class Portal(BaseAGOLClass):
         Input:
          outPath - save location of the customer list
         """
-        url = "%s/customers/export" % self.root
+        url = f"{self.root}/customers/export"
         params = {"f":"csv"}
         dirPath = None
         fileName = None
@@ -1127,7 +1122,7 @@ class Portal(BaseAGOLClass):
            updatePortalParamters - parameter.PortalParameters object that holds information to update
            clearEmptyFields - boolean that clears all whitespace from fields
         """
-        url = self.root + "/update"
+        url = f"{self.root}/update"
         params = {
             "f" : "json",
             "clearEmptyFields" : clearEmptyFields
@@ -1167,7 +1162,7 @@ class Portal(BaseAGOLClass):
            user - The username whose role you want to change.
 
         """
-        url = self._url + "/updateuserrole"
+        url = f"{self._url}/updateuserrole"
         params = {
             "f" : "json",
             "user" : user,
@@ -1188,7 +1183,7 @@ class Portal(BaseAGOLClass):
         Inputs:
            users - Comma-separated list of usernames to remove.
         """
-        url = self._url + "/removeusers"
+        url = f"{self._url}/removeusers"
         params = {
             "f" : "json",
             "users" : users
@@ -1213,7 +1208,7 @@ class Portal(BaseAGOLClass):
                          Map Service
         """
         _allowedTypes = ['Feature Service', "Map Service"]
-        url = self._url + "/isServiceNameAvailable"
+        url = f"{self._url}/isServiceNameAvailable"
         params = {
             "f" : "json",
             "name" : name,
@@ -1228,7 +1223,7 @@ class Portal(BaseAGOLClass):
     @property
     def servers(self):
         """gets the federated or registered servers for Portal"""
-        url = "%s/servers" % self.root
+        url = f"{self.root}/servers"
         return Servers(url=url,
                        securityHandler=self._securityHandler,
                        proxy_url=self._proxy_url,
@@ -1245,19 +1240,14 @@ class Portal(BaseAGOLClass):
         Ouput:
            dictionary
         """
-        userAssignments = []
-        for name in usernames:
-            userAssignments.append(
-                {
-                    "username" : name,
-                    "credits" : credits
-                }
-            )
+        userAssignments = [
+            {"username": name, "credits": credits} for name in usernames
+        ]
         params = {
             "userAssignments" : userAssignments,
             "f" : "json"
         }
-        url = self.root + "/assignUserCredits"
+        url = f"{self.root}/assignUserCredits"
         return self._post(url=url,
                              param_dict=params,
                              securityHandler=self._securityHandler,
@@ -1293,17 +1283,17 @@ class Portal(BaseAGOLClass):
          list of User classes
         """
         users = []
-        url = self._url + "/users"
+        url = f"{self._url}/users"
         params = {
             "f" : "json",
             "start" : start,
             "num" : num
         }
-        if not role is None:
+        if role is not None:
             params['role'] = role
-        if not sortField is None:
+        if sortField is not None:
             params['sortField'] = sortField
-        if not sortOrder is None:
+        if sortOrder is not None:
             params['sortOrder'] = sortOrder
         from ._community import Community
         res = self._post(url=url,
@@ -1316,20 +1306,14 @@ class Portal(BaseAGOLClass):
             if len(res['users']) > 0:
                 parsed = urlparse.urlparse(self._url)
                 if parsed.netloc.lower().find('arcgis.com') == -1:
-                    cURL = "%s://%s/%s/sharing/rest/community" % (parsed.scheme,
-                                                                  parsed.netloc,
-                                                                  parsed.path[1:].split('/')[0])
+                    cURL = f"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split('/')[0]}/sharing/rest/community"
                 else:
-                    cURL = "%s://%s/sharing/rest/community" % (parsed.scheme,
-                                                               parsed.netloc)
+                    cURL = f"{parsed.scheme}://{parsed.netloc}/sharing/rest/community"
                 com = Community(url=cURL,
                                 securityHandler=self._securityHandler,
                                 proxy_url=self._proxy_url,
                                 proxy_port=self._proxy_port)
-                for r in res['users']:
-                    users.append(
-                        com.users.user(r["username"])
-                    )
+                users.extend(com.users.user(r["username"]) for r in res['users'])
         res['users'] = users
         return res
     #----------------------------------------------------------------------
@@ -1348,7 +1332,7 @@ class Portal(BaseAGOLClass):
             "description" : description,
             "f" : "json"
         }
-        url = self.root + "/createRole"
+        url = f"{self.root}/createRole"
         return self._post(url=url,
                              param_dict=params,
                              securityHandler=self._securityHandler,
@@ -1359,10 +1343,12 @@ class Portal(BaseAGOLClass):
     def roles(self):
         """gets the roles class that allows admins to manage custom roles
         on portal"""
-        return Roles(url="%s/roles" % self.root,
-                     securityHandler=self._securityHandler,
-                     proxy_url=self._proxy_url,
-                     proxy_port=self._proxy_port)
+        return Roles(
+            url=f"{self.root}/roles",
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
     #----------------------------------------------------------------------
     def cost(self,
              tileStorage=0,
@@ -1400,7 +1386,7 @@ class Portal(BaseAGOLClass):
             "serviceAreaCount" : serviceAreaCount,
             "geocodeCount" : geocodeCount
         }
-        url = self._url + "/cost"
+        url = f"{self._url}/cost"
         return self._post(url=url,
                              param_dict=params,
                              securityHandler=self._securityHandler,
@@ -1419,7 +1405,7 @@ class Portal(BaseAGOLClass):
                    The index number is 1-based and the default is 1
            num - the maximum number of results to be returned as a whole #
         """
-        url = self._url + "/resources"
+        url = f"{self._url}/resources"
         params = {
             "f" : "json",
             "start" : start,
@@ -1445,7 +1431,7 @@ class Portal(BaseAGOLClass):
            text - Some text to be written (for example, JSON or JavaScript)
                   directly to the resource from a web client.
         """
-        url = self.root + "/addresource"
+        url = f"{self.root}/addresource"
         params = {
         "f": "json",
         "token" : self._securityHandler.token,
@@ -1453,15 +1439,15 @@ class Portal(BaseAGOLClass):
         "text" : text
         }
 
-        files = {}
-        files['file'] = filePath
-        res = self._post(url=url,
-                         param_dict=params,
-                         files=files,
-                         securityHandler=self._securityHandler,
-                         proxy_url=self._proxy_url,
-                         proxy_port=self._proxy_port)
-        return res
+        files = {'file': filePath}
+        return self._post(
+            url=url,
+            param_dict=params,
+            files=files,
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
     #----------------------------------------------------------------------
     def removeResource(self, key):
         """
@@ -1471,7 +1457,7 @@ class Portal(BaseAGOLClass):
         Input:
            key - name of resource to delete
         """
-        url = self._url + "/removeresource"
+        url = f"{self._url}/removeresource"
         params = {
             "key" : key,
             "f" : "json"
@@ -1485,7 +1471,7 @@ class Portal(BaseAGOLClass):
     @property
     def securityPolicy(self):
         """gets the object to manage the portal's security policy"""
-        url = "%s/securityPolicy" % self.root
+        url = f"{self.root}/securityPolicy"
         params = {'f': 'json'}
         return self._post(url=url,
                              param_dict=params,
@@ -1496,7 +1482,7 @@ class Portal(BaseAGOLClass):
     def resetSecurityPolicy(self):
         """resets the security policy to default install"""
         params = {"f" : "json"}
-        url = "%s/securityPolicy/reset" % self.root
+        url = f"{self.root}/securityPolicy/reset"
         return self._post(url=url,
                              param_dict=params,
                              securityHandler=self._securityHandler,
@@ -1524,7 +1510,7 @@ class Portal(BaseAGOLClass):
             "expirationInDays" : expirationInDays,
             "historySize": historySize
         }
-        url = "%s/securityPolicy/update" % self.root
+        url = f"{self.root}/securityPolicy/update"
         return self._post(url=url,
                      param_dict=params,
                      securityHandler=self._securityHandler,
@@ -1536,11 +1522,13 @@ class Portal(BaseAGOLClass):
     def portalAdmin(self):
         """gets a reference to a portal administration class"""
         from ..manageportal import PortalAdministration
-        return PortalAdministration(admin_url="https://%s/portaladmin" % self.portalHostname,
-                                    securityHandler=self._securityHandler,
-                                    proxy_url=self._proxy_url,
-                                    proxy_port=self._proxy_port,
-                                    initalize=False)
+        return PortalAdministration(
+            admin_url=f"https://{self.portalHostname}/portaladmin",
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+            initalize=False,
+        )
     #----------------------------------------------------------------------
     def addUser(self, invitationList,
                 subject, html):
@@ -1553,7 +1541,7 @@ class Portal(BaseAGOLClass):
            subject - email subject
            html - email message sent to users in invitation list object
         """
-        url = self._url + "/invite"
+        url = f"{self._url}/invite"
         params = {"f" : "json"}
         if isinstance(invitationList, parameters.InvitationList):
             params['invitationList'] = invitationList.value()
@@ -1585,7 +1573,7 @@ class Portal(BaseAGOLClass):
             an administrator
            expiration - time in seconds. Default is 1 day 1440
         """
-        url = self.root + "/inviteByEmail"
+        url = f"{self.root}/inviteByEmail"
         params = {
             "f" : "json",
             "emails": emails,
@@ -1605,7 +1593,7 @@ class Portal(BaseAGOLClass):
     def invitations(self):
         """gets all the invitations to the current portal"""
         params = {"f": "json"}
-        url = "%s/invitations" % self.root
+        url = f"{self.root}/invitations"
         return self._get(url=url,
                             param_dict=params,
                             securityHandler=self._securityHandler,
@@ -1620,7 +1608,7 @@ class Portal(BaseAGOLClass):
         returns the usage statistics value
         """
 
-        url = self.root + "/usage"
+        url = f"{self.root}/usage"
         startTime = str(int(local_time_to_online(dt=startTime)))
         endTime = str(int(local_time_to_online(dt=endTime)))
 
@@ -1652,7 +1640,7 @@ class Portal(BaseAGOLClass):
     @property
     def IDP(self):
         """gets the IDP information for the portal/agol"""
-        url = "%s/idp" % self.root
+        url = f"{self.root}/idp"
         params = {"f": "json"}
         return self._get(url=url,
                             param_dict=params,
@@ -1702,7 +1690,7 @@ class Servers(BaseAGOLClass):
             """Constructor"""
             self._surl = url
             self._securityHandler = securityHandler
-            if not securityHandler is None:
+            if securityHandler is not None:
                 self._referer_url = securityHandler.referer_url
             self._proxy_port = proxy_port
             self._proxy_url = proxy_url
@@ -1723,10 +1711,10 @@ class Servers(BaseAGOLClass):
             self._json = json.dumps(json_dict)
             attributes = [attr for attr in dir(self)
               if not attr.startswith('__') and \
-              not attr.startswith('_')]
+                      not attr.startswith('_')]
             for k,v in json_dict.items():
                 if k in attributes:
-                    setattr(self, "_"+ k, json_dict[k])
+                    setattr(self, f"_{k}", json_dict[k])
                 else:
                     print( k, " - attribute not implemented in Servers.Server class.")
         #----------------------------------------------------------------------
@@ -1809,7 +1797,7 @@ class Servers(BaseAGOLClass):
             Inputs:
                serverId - unique identifier of the server
             """
-            url = self._url + "/unregister"
+            url = f"{self._url}/unregister"
             params = {
                 "f" : "json"
             }
@@ -1845,7 +1833,7 @@ class Servers(BaseAGOLClass):
                serverType - The type of server being registered with the portal
                             For example: ArcGIS.
             """
-            url = self._url + "/update"
+            url = f"{self._url}/update"
             params = {
                 "name" : name,
                 "url" : url,
@@ -1867,10 +1855,10 @@ class Servers(BaseAGOLClass):
                  initalize=False):
         """Constructor"""
         if url.lower().endswith('/servers') == False:
-            url = url + "/servers"
+            url = f"{url}/servers"
         self._surl = url
         self._securityHandler = securityHandler
-        if not securityHandler is None:
+        if securityHandler is not None:
             self._referer_url = securityHandler.referer_url
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -1891,10 +1879,10 @@ class Servers(BaseAGOLClass):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in Servers class.")
     #----------------------------------------------------------------------
@@ -1957,7 +1945,7 @@ class Servers(BaseAGOLClass):
                serverType - The type of server being registered with the portal
                             For example: ArcGIS.
             """
-        url = self.root + "/register"
+        url = f"{self.root}/register"
         params = {
             "f" : "json",
             "url" : url,
@@ -1981,7 +1969,7 @@ class Servers(BaseAGOLClass):
             if k == "servers":
                 for s in v:
                     if 'id' in s:
-                        url = "%s/%s" % (self.root, s['id'])
+                        url = f"{self.root}/{s['id']}"
                         items.append(
                             self.Server(url=url,
                                         securityHandler=self._securityHandler,
@@ -2006,7 +1994,7 @@ class Roles(BaseAGOLClass):
                  proxy_port=None):
         """Constructor"""
         if url.find('/roles') < 0:
-            url = url + "/roles"
+            url = f"{url}/roles"
         self._url = url
         self._securityHandler = securityHandler
         self._proxy_url = proxy_url
@@ -2032,8 +2020,7 @@ class Roles(BaseAGOLClass):
         results = []
         while nextCount != -1:
             res = self.roles(start=start + nextCount, num=num)
-            for r in res['roles']:
-                yield r
+            yield from res['roles']
             nextCount = int(res['nextStart'])
     #----------------------------------------------------------------------
     def roles(self, start, num):
@@ -2061,7 +2048,7 @@ class Roles(BaseAGOLClass):
         deletes a role by ID
 
         """
-        url = self._url + "/%s/delete" % roleID
+        url = f"{self._url}/{roleID}/delete"
         params = {
             "f" : "json"
         }
@@ -2077,7 +2064,7 @@ class Roles(BaseAGOLClass):
             "description" : description,
             "f" : "json"
         }
-        url = self._url + "/%s/update"
+        url = f"{self._url}/%s/update"
         return self._post(url=url,
                              param_dict=params,
                              proxy_url=self._proxy_url,
@@ -2085,7 +2072,7 @@ class Roles(BaseAGOLClass):
     #----------------------------------------------------------------------
     def info(self, roleID):
         """"""
-        url = self._url + "/%s" % roleID
+        url = f"{self._url}/{roleID}"
         params = {"f" : "json"}
         return self._post(url=url,
                              param_dict=params,
@@ -2103,7 +2090,7 @@ class Roles(BaseAGOLClass):
     #----------------------------------------------------------------------
     def privileges(self, roleID):
         """returns the assigned priveleges for a given custom role"""
-        url = self._url + "/%s/privileges" % roleID
+        url = f"{self._url}/{roleID}/privileges"
         params = {"f" : "json"}
         return self._post(url=url,
                              param_dict=params,
@@ -2126,7 +2113,7 @@ class Roles(BaseAGOLClass):
             "id": roleID
 
         }
-        url = self._url + "/%s/setPrivileges" % roleID
+        url = f"{self._url}/{roleID}/setPrivileges"
         return self._post(url=url,
                              param_dict=params,
                              securityHandler=self._securityHandler,

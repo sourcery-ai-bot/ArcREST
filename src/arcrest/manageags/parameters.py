@@ -111,8 +111,7 @@ class Extension(object):
         """returns the object from json string or dictionary"""
         if isinstance(value, str):
             value = json.loads(value)
-        elif isinstance(value, dict): pass
-        else:
+        elif not isinstance(value, dict):
             raise AttributeError("Invalid input")
         return Extension(typeName=value['typeName'],
                          capabilities=value['capabilities'],

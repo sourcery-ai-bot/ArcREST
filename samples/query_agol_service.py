@@ -4,6 +4,7 @@
    ArcREST 3.0.1
 """
 
+
 from __future__ import print_function
 from arcresthelper import securityhandlerhelper
 from arcrest.agol import FeatureService
@@ -14,20 +15,20 @@ if __name__ == "__main__":
     proxy_port = None
     proxy_url = None
 
-    securityinfo = {}
-    securityinfo['security_type'] = 'Portal'#LDAP, NTLM, OAuth, Portal, PKI
-    securityinfo['username'] = ""
-    securityinfo['password'] = ""
-    securityinfo['org_url'] = "http://www.arcgis.com"
-    securityinfo['proxy_url'] = proxy_url
-    securityinfo['proxy_port'] = proxy_port
-    securityinfo['referer_url'] = None
-    securityinfo['token_url'] = None
-    securityinfo['certificatefile'] = None
-    securityinfo['keyfile'] = None
-    securityinfo['client_id'] = None
-    securityinfo['secret_id'] = None
-
+    securityinfo = {
+        'security_type': 'Portal',
+        'username': "",
+        'password': "",
+        'org_url': "http://www.arcgis.com",
+        'proxy_url': proxy_url,
+        'proxy_port': proxy_port,
+        'referer_url': None,
+        'token_url': None,
+        'certificatefile': None,
+        'keyfile': None,
+        'client_id': None,
+        'secret_id': None,
+    }
     shh = securityhandlerhelper.securityhandlerhelper(securityinfo=securityinfo)
     if shh.valid == False:
         print (shh.message)

@@ -20,10 +20,7 @@ class Uploads(BaseAGSServer):
                  proxy_url=None, proxy_port=None,
                  initialize=False):
         """Constructor"""
-        if url.lower().find("uploads") < -1:
-            self._url = url + "/uploads"
-        else:
-            self._url = url
+        self._url = f"{url}/uploads" if url.lower().find("uploads") < -1 else url
         self._securityHandler = securityHandler
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -51,7 +48,7 @@ class Uploads(BaseAGSServer):
            Inputs:
               itemId - unique ID of the item
         """
-        url = self._url + "/%s/delete" % itemId
+        url = f"{self._url}/{itemId}/delete"
         params = {
             "f" : "json"
         }
@@ -74,7 +71,7 @@ class Uploads(BaseAGSServer):
         The committed parameter is set to true once the upload of
         individual parts is complete.
         """
-        url = self._url + "/%s" % itemId
+        url = f"{self._url}/{itemId}"
         params = {
             "f" : "json"
         }
@@ -94,12 +91,11 @@ class Uploads(BaseAGSServer):
             description - optional description for the uploaded item.
         """
         import urlparse
-        url = self._url + "/upload"
+        url = f"{self._url}/upload"
         params = {
             "f" : "json"
         }
-        files = {}
-        files['itemFile'] = filePath
+        files = {'itemFile': filePath}
         return self._post(url=url,
                           param_dict=params,
                           files=files,

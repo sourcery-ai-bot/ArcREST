@@ -27,10 +27,7 @@ class Mode(BaseAGSServer):
                  proxy_port=None,
                  initialize=False):
         """Constructor"""
-        if url.lower().endswith('/mode'):
-            self._url = url
-        else:
-            self._url = url + "/mode"
+        self._url = url if url.lower().endswith('/mode') else f"{url}/mode"
         self._securityHandler = securityHandler
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -49,10 +46,10 @@ class Mode(BaseAGSServer):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in Mode.")
             del k

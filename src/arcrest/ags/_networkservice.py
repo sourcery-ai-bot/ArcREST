@@ -57,43 +57,50 @@ class NetworkService(BaseAGSServer):
         self._json = json.dumps(self._json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
 
         for k,v in json_dict.items():
             if k in attributes:
                 if k == "routeLayers" and json_dict[k]:
                     self._routeLayers = []
-                    for rl in v:
-                        self._routeLayers.append(
-                            RouteNetworkLayer(url=self._url + "/%s" % rl,
-                                              securityHandler=self._securityHandler,
-                                              proxy_url=self._proxy_url,
-                                              proxy_port=self._proxy_port,
-                                              initialize=False))
-
+                    self._routeLayers.extend(
+                        RouteNetworkLayer(
+                            url=f"{self._url}/{rl}",
+                            securityHandler=self._securityHandler,
+                            proxy_url=self._proxy_url,
+                            proxy_port=self._proxy_port,
+                            initialize=False,
+                        )
+                        for rl in v
+                    )
                 elif k == "serviceAreaLayers" and json_dict[k]:
                     self._serviceAreaLayers = []
-                    for sal in v:
-                        self._serviceAreaLayers.append(
-                            ServiceAreaNetworkLayer(url=self._url + "/%s" % sal,
-                                                    securityHandler=self._securityHandler,
-                                                    proxy_url=self._proxy_url,
-                                                    proxy_port=self._proxy_port,
-                                                    initialize=False))
-
+                    self._serviceAreaLayers.extend(
+                        ServiceAreaNetworkLayer(
+                            url=f"{self._url}/{sal}",
+                            securityHandler=self._securityHandler,
+                            proxy_url=self._proxy_url,
+                            proxy_port=self._proxy_port,
+                            initialize=False,
+                        )
+                        for sal in v
+                    )
                 elif k == "closestFacilityLayers" and json_dict[k]:
                     self._closestFacilityLayers = []
-                    for cf in v:
-                        self._closestFacilityLayers.append(
-                            ClosestFacilityNetworkLayer(url=self._url + "/%s" % cf,
-                                                    securityHandler=self._securityHandler,
-                                                    proxy_url=self._proxy_url,
-                                                    proxy_port=self._proxy_port,
-                                                    initialize=False))
+                    self._closestFacilityLayers.extend(
+                        ClosestFacilityNetworkLayer(
+                            url=f"{self._url}/{cf}",
+                            securityHandler=self._securityHandler,
+                            proxy_url=self._proxy_url,
+                            proxy_port=self._proxy_port,
+                            initialize=False,
+                        )
+                        for cf in v
+                    )
                 else:
-                    setattr(self, "_"+ k, v)
+                    setattr(self, f"_{k}", v)
             else:
-                print ("attribute %s is not implemented." % k)
+                print(f"attribute {k} is not implemented.")
     #----------------------------------------------------------------------
     def __str__(self):
         """returns object as string"""
@@ -211,7 +218,7 @@ class NetworkLayer(BaseAGSServer):
         """Constructor"""
         self._url = url
         self._securityHandler = securityHandler
-        if not securityHandler is None:
+        if securityHandler is not None:
             self._referer_url = securityHandler.referer_url
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -233,10 +240,10 @@ class NetworkLayer(BaseAGSServer):
                                  proxy_port=self._proxy_port)
         attributes = [attr for attr in dir(self)
                     if not attr.startswith('__') and \
-                    not attr.startswith('_')]
+                        not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print (k, " - attribute not implemented in NetworkLayer.")
             del k,v
@@ -400,7 +407,7 @@ class NetworkLayer(BaseAGSServer):
     def retrieveTravelModes(self):
         """identify all the valid travel modes that have been defined on the
         network dataset or in the portal if the GIS server is federated"""
-        url = self._url + "/retrieveTravelModes"
+        url = f"{self._url}/retrieveTravelModes"
         params = {"f":"json"}
         return self._get(url=url,
                          param_dict=params,
@@ -448,10 +455,10 @@ class RouteNetworkLayer(NetworkLayer):
                                  proxy_port=self._proxy_port)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in RouteNetworkLayer.")
             del k,v

@@ -53,13 +53,8 @@ class FeatureService(BaseAGSServer):
         if securityHandler is not None:
             self._securityHandler = securityHandler
 
-        elif securityHandler is None:
-            pass
-        else:
-            raise AttributeError("Invalid Security Handler")
-        if not securityHandler is None and \
-           hasattr(securityHandler, 'referer_url'):
-            self._referer_url = securityHandler.referer_url
+            if hasattr(securityHandler, 'referer_url'):
+                self._referer_url = securityHandler.referer_url
         if initialize:
             self.__init()
     #----------------------------------------------------------------------
@@ -74,10 +69,10 @@ class FeatureService(BaseAGSServer):
         self._json = json.dumps(self._json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, v)
+                setattr(self, f"_{k}", v)
             else:
                 print(k, " - attribute not implemented for Feature Service.")
     #----------------------------------------------------------------------
@@ -90,7 +85,7 @@ class FeatureService(BaseAGSServer):
         addText = "/admin/"
         part1 = url[:res[1]].lower().replace('/rest/', '')
         part2 = url[res[1]:].lower().replace('/featureserver', ".mapserver")
-        adminURL = "%s%s%s" % (part1, addText, part2)
+        adminURL = f"{part1}{addText}{part2}"
         return AGSService(url=adminURL,
                           securityHandler=self._securityHandler,
                           proxy_url=self._proxy_url,
@@ -101,7 +96,7 @@ class FeatureService(BaseAGSServer):
     def itemInfo(self):
         """gets the item's info"""
         params = {"f" : "json"}
-        url = self._url + "/info/iteminfo"
+        url = f"{self._url}/info/iteminfo"
         return self._get(url=url, param_dict=params,
                             securityHandler=self._securityHandler,
                             proxy_url=self._proxy_url,
@@ -109,7 +104,7 @@ class FeatureService(BaseAGSServer):
     #----------------------------------------------------------------------
     def downloadThumbnail(self, outPath):
         """downloads the items's thumbnail"""
-        url = self._url + "/info/thumbnail"
+        url = f"{self._url}/info/thumbnail"
         params = {}
         return self._get(url=url,
                          out_folder=outPath,
@@ -122,7 +117,7 @@ class FeatureService(BaseAGSServer):
     def downloadMetadataFile(self, outPath):
         """downloads the metadata file to a given path"""
         fileName = "metadata.xml"
-        url = self._url + "/info/metadata"
+        url = f"{self._url}/info/metadata"
         params = {}
         return self._get(url=url,
                          out_folder=outPath,
@@ -156,8 +151,6 @@ class FeatureService(BaseAGSServer):
         if isinstance(value, BaseSecurityHandler):
             if isinstance(value, security.AGSTokenSecurityHandler):
                 self._securityHandler = value
-            else:
-                pass
         elif value is None:
             self._securityHandler = None
             self._token = None
@@ -278,13 +271,15 @@ class FeatureService(BaseAGSServer):
                                  proxy_port=self._proxy_port)
         self._layers = []
         if 'layers' in json_dict:
-            for l in json_dict["layers"]:
-                self._layers.append(
-                    layer.FeatureLayer(url=self._url + "/%s" % l['id'],
-                                       securityHandler=self._securityHandler,
-                                       proxy_port=self._proxy_port,
-                                       proxy_url=self._proxy_url)
+            self._layers.extend(
+                layer.FeatureLayer(
+                    url=f"{self._url}/{l['id']}",
+                    securityHandler=self._securityHandler,
+                    proxy_port=self._proxy_port,
+                    proxy_url=self._proxy_url,
                 )
+                for l in json_dict["layers"]
+            )
     #----------------------------------------------------------------------
     @property
     def tables(self):
@@ -357,28 +352,28 @@ class FeatureService(BaseAGSServer):
         """
            The Query operation is performed on a feature service resource
         """
-        qurl = self._url + "/query"
+        qurl = f"{self._url}/query"
         params = {"f": "json",
                   "returnGeometry": returnGeometry,
                   "returnIdsOnly": returnIdsOnly,
                   "returnCountOnly": returnCountOnly,
                   "returnZ": returnZ,
                   "returnM" : returnM}
-        if not layerDefsFilter is None and \
-           isinstance(layerDefsFilter, LayerDefinitionFilter):
+        if layerDefsFilter is not None and isinstance(
+            layerDefsFilter, LayerDefinitionFilter
+        ):
             params['layerDefs'] = layerDefsFilter.filter
-        if not geometryFilter is None and \
-           isinstance(geometryFilter, GeometryFilter):
+        if geometryFilter is not None and isinstance(
+            geometryFilter, GeometryFilter
+        ):
             gf = geometryFilter.filter
             params['geometryType'] = gf['geometryType']
             params['spatialRel'] = gf['spatialRel']
             params['geometry'] = gf['geometry']
             params['inSR'] = gf['inSR']
-        if not outSR is None and \
-           isinstance(outSR, SpatialReference):
+        if outSR is not None and isinstance(outSR, SpatialReference):
             params['outSR'] = outSR.asDictionary
-        if not timeFilter is None and \
-           isinstance(timeFilter, TimeFilter):
+        if timeFilter is not None and isinstance(timeFilter, TimeFilter):
             params['time'] = timeFilter.filter
 
         res = self._post(url=qurl,

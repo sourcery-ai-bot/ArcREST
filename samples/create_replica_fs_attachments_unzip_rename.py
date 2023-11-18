@@ -4,6 +4,7 @@
   ArcREST version 3.5.x
   Python 2/3
 """
+
 from __future__ import print_function
 from arcrest.security import AGOLTokenSecurityHandler
 from arcrest.agol import FeatureService
@@ -41,7 +42,7 @@ if __name__ == "__main__":
     newzip = zipfile.ZipFile(result)
     newzip.extractall(parentdirectory)
     z = zipfile.ZipFile(result, 'r')
-    dirs = list(set([os.path.dirname(x) for x in z.namelist()]))
+    dirs = list({os.path.dirname(x) for x in z.namelist()})
     extractedfgdb = '{0}'.format(os.path.join(parentdirectory,str(dirs[0])))
     renamefgdb = '{0}\\{1}.gdb'.format(parentdirectory,repName) # Use repName or change to your choice of string value
     os.rename(extractedfgdb,renamefgdb)

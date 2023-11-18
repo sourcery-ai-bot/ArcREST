@@ -62,7 +62,7 @@ class CommunityMapsProgram(BaseCMP):
     def contributionStatus(self):
         """gets the contribution status of a user"""
         import time
-        url = "%s/contributors/%s/activeContribution" % (self.root, quote(self.contributorUID))
+        url = f"{self.root}/contributors/{quote(self.contributorUID)}/activeContribution"
         params = {
             "agolUserToken" : self._agolSH.token,
             "f" : "json"
@@ -71,10 +71,7 @@ class CommunityMapsProgram(BaseCMP):
                          param_dict=params,
                          proxy_url=self._proxy_url,
                          proxy_port=self._proxy_port)
-        if'Status' in res and \
-          res['Status'] == 'start':
-            return True
-        return False
+        return 'Status' in res and res['Status'] == 'start'
     #----------------------------------------------------------------------
     def refresh(self):
         """resets the user class"""
@@ -84,7 +81,7 @@ class CommunityMapsProgram(BaseCMP):
     def user(self):
         """gets the user properties"""
         if self._user is None:
-            url = "%s/users/%s" % (self.root, self._username)
+            url = f"{self.root}/users/{self._username}"
             self._user = CMPUser(url=url,
                                  securityHandler=self._securityHandler,
                                  proxy_port=self._proxy_port,
@@ -117,7 +114,7 @@ class CommunityMapsProgram(BaseCMP):
     def addItem(self, filePath):
         """"""
         from ..packages.six.moves.urllib_parse import urlparse
-        url = "%s/sharing/content/users/CommunityMapsTeam" % self.root
+        url = f"{self.root}/sharing/content/users/CommunityMapsTeam"
         files = {'file' : filePath}
         params = {
             "f" : "json"
@@ -247,10 +244,10 @@ class CMPUser(BaseCMP):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in CMPUser class.")
 

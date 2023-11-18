@@ -84,21 +84,23 @@ class GPService(BaseAGSServer):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                     if not attr.startswith('__') and \
-                    not attr.startswith('_')]
+                        not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
                 if k == "tasks":
                     self._tasks = []
-                    for t in v:
-                        self._tasks.append(
-                            GPTask(url=self._url + "/%s" % t,
-                                   securityHandler=self._securityHandler,
-                                   proxy_url=self._proxy_url,
-                                   proxy_port=self._proxy_port,
-                                   initialize=False)
+                    self._tasks.extend(
+                        GPTask(
+                            url=f"{self._url}/{t}",
+                            securityHandler=self._securityHandler,
+                            proxy_url=self._proxy_url,
+                            proxy_port=self._proxy_port,
+                            initialize=False,
                         )
+                        for t in v
+                    )
                 else:
-                    setattr(self, "_"+ k, json_dict[k])
+                    setattr(self, f"_{k}", json_dict[k])
             else:
                 print (k, " - attribute not implemented for gp service.")
     #----------------------------------------------------------------------
@@ -176,7 +178,7 @@ class GPTask(BaseAGSServer):
         """Constructor"""
         self._url = url
         self._securityHandler = securityHandler
-        if not securityHandler is None:
+        if securityHandler is not None:
             self._referer_url = securityHandler.referer_url
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -194,10 +196,10 @@ class GPTask(BaseAGSServer):
                                  proxy_port=self._proxy_port)
         attributes = [attr for attr in dir(self)
                     if not attr.startswith('__') and \
-                    not attr.startswith('_')]
+                        not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in GPTask.")
             del k,v
@@ -280,7 +282,7 @@ class GPTask(BaseAGSServer):
     #----------------------------------------------------------------------
     def getJob(self, jobID):
         """ returns the results or status of a job """
-        url = self._url + "/jobs/%s" % (jobID)
+        url = f"{self._url}/jobs/{jobID}"
         return GPJob(url=url,
                      securityHandler=self._securityHandler,
                      proxy_port=self._proxy_port,
@@ -303,15 +305,15 @@ class GPTask(BaseAGSServer):
            Ouput:
               JOB ID as a string
         """
-        url = self._url + "/submitJob"
+        url = f"{self._url}/submitJob"
         params = { "f" : "json" }
-        if not outSR is None:
+        if outSR is not None:
             params['env:outSR'] = outSR
-        if not processSR is None:
+        if processSR is not None:
             params['end:processSR'] = processSR
         params['returnZ'] = returnZ
         params['returnM'] = returnM
-        if not inputs is None:
+        if inputs is not None:
             for p in inputs:
                 if isinstance(p, BaseGPObject):
                     params[p.paramName] = p.value
@@ -320,7 +322,7 @@ class GPTask(BaseAGSServer):
                                securityHandler=self._securityHandler,
                                 proxy_url=self._proxy_url,
                                 proxy_port=self._proxy_port)
-            jobUrl = self._url + "/jobs/%s" % res['jobId']
+            jobUrl = f"{self._url}/jobs/{res['jobId']}"
             return GPJob(url=jobUrl,
                           securityHandler=self._securityHandler,
                           proxy_url=self._proxy_url,
@@ -331,15 +333,14 @@ class GPTask(BaseAGSServer):
                                 securityHandler=self._securityHandler,
                                 proxy_url=self._proxy_url,
                                 proxy_port=self._proxy_port)
-            jobUrl = self._url + "/jobs/%s" % res['jobId']
+            jobUrl = f"{self._url}/jobs/{res['jobId']}"
             return GPJob(url=jobUrl,
                           securityHandler=self._securityHandler,
                           proxy_url=self._proxy_url,
                           proxy_port=self._proxy_port,
                           initialize=True)
         else:
-            raise AttributeError("Invalid input: %s. Must be GET or POST" \
-                                 % method)
+            raise AttributeError(f"Invalid input: {method}. Must be GET or POST")
     #----------------------------------------------------------------------
     def executeTask(self,
                     inputs,
@@ -356,11 +357,11 @@ class GPTask(BaseAGSServer):
         params = {
             "f" : f
         }
-        url = self._url + "/execute"
+        url = f"{self._url}/execute"
         params = { "f" : "json" }
-        if not outSR is None:
+        if outSR is not None:
             params['env:outSR'] = outSR
-        if not processSR is None:
+        if processSR is not None:
             params['end:processSR'] = processSR
         params['returnZ'] = returnZ
         params['returnM'] = returnM
@@ -423,10 +424,10 @@ class GPJob(BaseAGSServer):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                     if not attr.startswith('__') and \
-                    not attr.startswith('_')]
+                        not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print (k, " - attribute not implemented for GPJob.")
             del k,v
@@ -436,11 +437,13 @@ class GPJob(BaseAGSServer):
         params = {
             "f" : "json"
         }
-        return self._get(url=self._url + "/cancel",
-                            param_dict=params,
-                            securityHandler=self._securityHandler,
-                            proxy_url=self._proxy_url,
-                            proxy_port=self._proxy_port)
+        return self._get(
+            url=f"{self._url}/cancel",
+            param_dict=params,
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
     #----------------------------------------------------------------------
     @property
     def messages(self):
@@ -452,7 +455,7 @@ class GPJob(BaseAGSServer):
         """
         gets the result object dictionary
         """
-        url = self._url + "/%s" % urlpart
+        url = f"{self._url}/{urlpart}"
         params = {
             "f" : "json",
 
@@ -520,5 +523,4 @@ class GPJob(BaseAGSServer):
         """ gets a parameter value """
         if  self._results is None:
             self.__init()
-        parameter = self._results[parameterName]
-        return parameter
+        return self._results[parameterName]

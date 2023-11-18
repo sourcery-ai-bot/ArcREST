@@ -47,7 +47,7 @@ class Server(BaseAGSServer):
         self._location = self._url
         self._currentFolder = "root"
         self._securityHandler = securityHandler
-        if not securityHandler is None:
+        if securityHandler is not None:
             self._referer_url = securityHandler.referer_url
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
@@ -70,18 +70,15 @@ class Server(BaseAGSServer):
             path = "/".join(parts)
         else:
             path = "arcgis"
-        self._adminUrl = "%s://%s/%s/admin" % (parsed.scheme, parsed.netloc, path)
-        return "%s://%s/%s/rest/services" % (parsed.scheme, parsed.netloc, path)
+        self._adminUrl = f"{parsed.scheme}://{parsed.netloc}/{path}/admin"
+        return f"{parsed.scheme}://{parsed.netloc}/{path}/rest/services"
     #----------------------------------------------------------------------
     def __init(self, folder='root'):
         """loads the property data into the class"""
         params = {
             "f" : "json"
         }
-        if folder == "root":
-            url = self.root
-        else:
-            url = self.location
+        url = self.root if folder == "root" else self.location
         json_dict = self._get(url=url,
                                  param_dict=params,
                                  securityHandler=self._securityHandler,
@@ -91,14 +88,14 @@ class Server(BaseAGSServer):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k == "folders":
                 pass
             elif k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
-                print("%s - attribute not implemented in ags.Server class." % k)
+                print(f"{k} - attribute not implemented in ags.Server class.")
         json_dict = self._get(url=self.root,
                                  param_dict=params,
                                  securityHandler=self._securityHandler,
@@ -107,7 +104,7 @@ class Server(BaseAGSServer):
         for k,v in json_dict.items():
             if k == 'folders':
                 v.insert(0, 'root')
-                setattr(self, "_"+ k, v)
+                setattr(self, f"_{k}", v)
     #----------------------------------------------------------------------
     @property
     def root(self):
@@ -156,7 +153,7 @@ class Server(BaseAGSServer):
     def self(self):
         """gets the logged in user"""
         params = {"f" : "json"}
-        url = "%s/self" % self.root.replace("/services", "")
+        url = f'{self.root.replace("/services", "")}/self'
         return self._get(url=url,
                          param_dict=params,
                          securityHandler=self._securityHandler,
@@ -170,7 +167,7 @@ class Server(BaseAGSServer):
         if self._services is None:
             self.__init()
         for service in self._services:
-            url = "%s/%s/%s" % (self.root, service['name'], service['type'])
+            url = f"{self.root}/{service['name']}/{service['type']}"
             if service['type'] == "GPServer":
                 services.append(GPService(url=url,
                                           securityHandler=self._securityHandler,
@@ -191,13 +188,13 @@ class Server(BaseAGSServer):
                     serviceName = service['name']
                 else:
                     serviceName = service['name'].split('/')[1]
-                url = "%s/%s/%s" % (self.location, serviceName, service['type'])
+                url = f"{self.location}/{serviceName}/{service['type']}"
                 services.append(FeatureService(url=url,
                                                securityHandler=self._securityHandler,
                                                proxy_url=self._proxy_url,
                                                proxy_port=self._proxy_port))
             elif service['type'] == "GeometryServer":
-                url = "%s/%s/%s" % (self.root, service['name'], service['type'])
+                url = f"{self.root}/{service['name']}/{service['type']}"
                 services.append(GeometryService(url=url,
                                                securityHandler=self._securityHandler,
                                                proxy_url=self._proxy_url,
@@ -231,10 +228,12 @@ class Server(BaseAGSServer):
                 services.append(StreamService(url=url,
                                              securityHandler=self._securityHandler,
                                              proxy_port=self._proxy_port,
-                                             proxy_url=self._proxy_url))                
-            elif service['type'] in ("IndexGenerator", "IndexingLauncher", "SearchServer"):
-                pass
-            else:
+                                             proxy_url=self._proxy_url))
+            elif service['type'] not in (
+                "IndexGenerator",
+                "IndexingLauncher",
+                "SearchServer",
+            ):
                 print (service['type'], service['name'])
         return services
     #----------------------------------------------------------------------
@@ -256,7 +255,7 @@ class Server(BaseAGSServer):
         if value in self.folders:
             if value.lower() != 'root':
                 self._currentFolder = value
-                self._location = "%s/%s" % (self.root, value)
+                self._location = f"{self.root}/{value}"
             else:
                 self._currentFolder = value
                 self._location = self.root

@@ -86,14 +86,12 @@ class FeatureService(abstract.BaseAGOLClass):
         self._proxy_url = proxy_url
         if isinstance(securityHandler, BaseSecurityHandler):
             if hasattr(securityHandler, 'is_portal'):
-                if securityHandler.is_portal:
-                    if hasattr(securityHandler, 'portalServerHandler'):
-                        self._securityHandler = securityHandler.portalServerHandler(serverUrl=url)
-                    else:
-                        self._securityHandler = securityHandler
+                if securityHandler.is_portal and hasattr(
+                    securityHandler, 'portalServerHandler'
+                ):
+                    self._securityHandler = securityHandler.portalServerHandler(serverUrl=url)
                 else:
                     self._securityHandler = securityHandler
-
             else:
                 self._securityHandler = securityHandler
 
@@ -114,16 +112,16 @@ class FeatureService(abstract.BaseAGOLClass):
                                 default=_date_handler)
         attributes = [attr for attr in dir(self)
                     if not attr.startswith('__') and \
-                    not attr.startswith('_')]
+                        not attr.startswith('_')]
         for k,v in json_dict.items():
             if k == 'layers':
                 self._getLayers()
             elif k == 'tables':
                 self._getTables()
             elif k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
-                print("%s - attribute not implemented in Feature Service." % k)
+                print(f"{k} - attribute not implemented in Feature Service.")
     #----------------------------------------------------------------------
     def __str__(self):
         """ returns object as string """
@@ -161,8 +159,6 @@ class FeatureService(abstract.BaseAGOLClass):
                 self._token_url = value.token_url
             elif isinstance(value, security.OAuthSecurityHandler):
                 self._securityHandler = value
-            else:
-                pass
     #----------------------------------------------------------------------
     @property
     def editingInfo(self):
@@ -289,10 +285,12 @@ class FeatureService(abstract.BaseAGOLClass):
         only return the uploads class if syncEnabled is True.
         """
         if self.syncEnabled == True:
-            return Uploads(url=self._url + "/uploads",
-                           securityHandler=self._securityHandler,
-                           proxy_url=self._proxy_url,
-                           proxy_port=self._proxy_port)
+            return Uploads(
+                url=f"{self._url}/uploads",
+                securityHandler=self._securityHandler,
+                proxy_url=self._proxy_url,
+                proxy_port=self._proxy_port,
+            )
         return None
     #----------------------------------------------------------------------
     @property
@@ -326,12 +324,16 @@ class FeatureService(abstract.BaseAGOLClass):
                                   proxy_url=self._proxy_url,
                                   proxy_port=self._proxy_port)
             if isinstance(json_dict, dict) and \
-               'layers' in json_dict:
+                   'layers' in json_dict:
                 for l in json_dict['layers']:
-                    self._layers.append(FeatureLayer(url=self._url + "/%s" % l['id'],
-                                                     securityHandler=self._securityHandler,
-                                                     proxy_port=self._proxy_port,
-                                                     proxy_url=self._proxy_url))
+                    self._layers.append(
+                        FeatureLayer(
+                            url=f"{self._url}/{l['id']}",
+                            securityHandler=self._securityHandler,
+                            proxy_port=self._proxy_port,
+                            proxy_url=self._proxy_url,
+                        )
+                    )
                     del l
         return self._layers
     #----------------------------------------------------------------------
@@ -345,12 +347,16 @@ class FeatureService(abstract.BaseAGOLClass):
                                      proxy_url=self._proxy_url,
                                      proxy_port=self._proxy_port)
             if isinstance(json_dict, dict) and \
-               'tables' in json_dict:
+                   'tables' in json_dict:
                 for l in json_dict['tables']:
-                    self._tables.append(FeatureLayer(url=self._url + "/%s" % l['id'],
-                                                     securityHandler=self._securityHandler,
-                                                     proxy_port=self._proxy_port,
-                                                     proxy_url=self._proxy_url))
+                    self._tables.append(
+                        FeatureLayer(
+                            url=f"{self._url}/{l['id']}",
+                            securityHandler=self._securityHandler,
+                            proxy_port=self._proxy_port,
+                            proxy_url=self._proxy_url,
+                        )
+                    )
                     del l
         return self._tables
     @property
@@ -409,7 +415,7 @@ class FeatureService(abstract.BaseAGOLClass):
         addText = "admin/"
         part1 = url[:res[1]]
         part2 = url[res[1]:]
-        adminURL = "%s%s%s" % (part1, addText, part2)
+        adminURL = f"{part1}{addText}{part2}"
 
         res = AdminFeatureService(url=url,
                             securityHandler=self._securityHandler,
@@ -453,28 +459,28 @@ class FeatureService(abstract.BaseAGOLClass):
         """
            The Query operation is performed on a feature service resource
         """
-        qurl = self._url + "/query"
+        qurl = f"{self._url}/query"
         params = {"f": "json",
                   "returnGeometry": returnGeometry,
                   "returnIdsOnly": returnIdsOnly,
                   "returnCountOnly": returnCountOnly,
                   "returnZ": returnZ,
                   "returnM" : returnM}
-        if not layerDefsFilter is None and \
-           isinstance(layerDefsFilter, LayerDefinitionFilter):
+        if layerDefsFilter is not None and isinstance(
+            layerDefsFilter, LayerDefinitionFilter
+        ):
             params['layerDefs'] = layerDefsFilter.filter
-        if not geometryFilter is None and \
-           isinstance(geometryFilter, GeometryFilter):
+        if geometryFilter is not None and isinstance(
+            geometryFilter, GeometryFilter
+        ):
             gf = geometryFilter.filter
             params['geometryType'] = gf['geometryType']
             params['spatialRel'] = gf['spatialRel']
             params['geometry'] = gf['geometry']
             params['inSR'] = gf['inSR']
-        if not outSR is None and \
-           isinstance(outSR, geometry.SpatialReference):
+        if outSR is not None and isinstance(outSR, geometry.SpatialReference):
             params['outSR'] = outSR.asDictionary
-        if not timeFilter is None and \
-           isinstance(timeFilter, TimeFilter):
+        if timeFilter is not None and isinstance(timeFilter, TimeFilter):
             params['time'] = timeFilter.filter
         res =  self._get(url=qurl,
                          param_dict=params,
@@ -575,11 +581,14 @@ class FeatureService(abstract.BaseAGOLClass):
             params['maxAllowableOffset'] = maxAllowableOffset
         if geometryPrecision is not None:
             params['geometryPrecision'] = geometryPrecision
-        quURL = self._url + "/queryRelatedRecords"
-        res = self._get(url=quURL, param_dict=params,
-                        securityHandler=self._securityHandler,
-                        proxy_url=self._proxy_url, proxy_port=self._proxy_port)
-        return res
+        quURL = f"{self._url}/queryRelatedRecords"
+        return self._get(
+            url=quURL,
+            param_dict=params,
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
     #----------------------------------------------------------------------
     @property
     def replicas(self):
@@ -588,7 +597,7 @@ class FeatureService(abstract.BaseAGOLClass):
             "f" : "json",
 
         }
-        url = self._url + "/replicas"
+        url = f"{self._url}/replicas"
         return self._get(url, params,
                          securityHandler=self._securityHandler,
                          proxy_url=self._proxy_url,
@@ -605,7 +614,7 @@ class FeatureService(abstract.BaseAGOLClass):
             "f" : "json",
             "replicaID" : replica_id
         }
-        url = self._url + "/unRegisterReplica"
+        url = f"{self._url}/unRegisterReplica"
         return self._post(url, params,
                           securityHandler=self._securityHandler,
                           proxy_url=self._proxy_url,
@@ -622,7 +631,7 @@ class FeatureService(abstract.BaseAGOLClass):
         params = {
             "f" : "json"
         }
-        url = self._url + "/replicas/" + replica_id
+        url = f"{self._url}/replicas/{replica_id}"
         return self._get(url, param_dict=params,
                             securityHandler=self._securityHandler,
                             proxy_url=self._proxy_url,
@@ -716,7 +725,7 @@ class FeatureService(abstract.BaseAGOLClass):
         """
         if self.syncEnabled == False and "Extract" not in self.capabilities:
             return None
-        url = self._url + "/createReplica"
+        url = f"{self._url}/createReplica"
         dataformat = ["filegdb", "json", "sqlite", "shapefile"]
         params = {"f" : "json",
                   "replicaName": replicaName,
@@ -734,7 +743,7 @@ class FeatureService(abstract.BaseAGOLClass):
         if layerQueries is not None:
             params['layerQueries'] = layerQueries
         if geometryFilter is not None and \
-           isinstance(geometryFilter, GeometryFilter):
+               isinstance(geometryFilter, GeometryFilter):
             params.update(geometryFilter.filter)
         if replicaSR is not None:
             params['replicaSR'] = replicaSR
@@ -743,37 +752,28 @@ class FeatureService(abstract.BaseAGOLClass):
         if transportType is not None:
             params['transportType'] = transportType
 
-        if async:
-            if wait:
-                exportJob = self._post(url=url,
-                                          param_dict=params,
-                                          securityHandler=self._securityHandler,
-                                          proxy_url=self._proxy_url,
-                                          proxy_port=self._proxy_port)
+        if async and wait:
+            exportJob = self._post(url=url,
+                                      param_dict=params,
+                                      securityHandler=self._securityHandler,
+                                      proxy_url=self._proxy_url,
+                                      proxy_port=self._proxy_port)
+            status = self.replicaStatus(url=exportJob['statusUrl'])
+            while status['status'].lower() != "completed":
                 status = self.replicaStatus(url=exportJob['statusUrl'])
-                while status['status'].lower() != "completed":
-                    status = self.replicaStatus(url=exportJob['statusUrl'])
-                    if status['status'].lower() == "failed":
-                        return status
+                if status['status'].lower() == "failed":
+                    return status
 
-                res = status
+            res = status
 
-            else:
-                res = self._post(url=url,
-                                     param_dict=params,
-                                     securityHandler=self._securityHandler,
-                                     proxy_url=self._proxy_url,
-                                     proxy_port=self._proxy_port)
         else:
             res = self._post(url=url,
-                                param_dict=params,
-                                securityHandler=self._securityHandler,
-                                proxy_url=self._proxy_url,
-                                proxy_port=self._proxy_port)
-
-
+                                 param_dict=params,
+                                 securityHandler=self._securityHandler,
+                                 proxy_url=self._proxy_url,
+                                 proxy_port=self._proxy_port)
         if out_path is not None and \
-           os.path.isdir(out_path):
+               os.path.isdir(out_path):
             dlURL = None
             if 'resultUrl' in res:
                 dlURL = res["resultUrl"]
@@ -827,7 +827,7 @@ class FeatureService(abstract.BaseAGOLClass):
     def replicaStatus(self, url):
         """gets the replica status when exported async set to True"""
         params = {"f" : "json"}
-        url = url + "/status"
+        url = f"{url}/status"
         return self._get(url=url,
                             param_dict=params,
                             securityHandler=self._securityHandler,
@@ -925,14 +925,12 @@ class FeatureLayer(abstract.BaseAGOLClass):
         self._proxy_url = proxy_url
         if isinstance(securityHandler, BaseSecurityHandler):
             if hasattr(securityHandler, 'is_portal'):
-                if securityHandler.is_portal:
-                    if hasattr(securityHandler, 'portalServerHandler'):
-                        self._securityHandler = securityHandler.portalServerHandler(serverUrl=url)
-                    else:
-                        self._securityHandler = securityHandler
+                if securityHandler.is_portal and hasattr(
+                    securityHandler, 'portalServerHandler'
+                ):
+                    self._securityHandler = securityHandler.portalServerHandler(serverUrl=url)
                 else:
                     self._securityHandler = securityHandler
-
             else:
                 self._securityHandler = securityHandler
 
@@ -952,12 +950,12 @@ class FeatureLayer(abstract.BaseAGOLClass):
         self._json = json.dumps(json_dict, default=self._date_handler)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
-                print("%s - attribute not implemented in Feature Layer." % k)
+                print(f"{k} - attribute not implemented in Feature Layer.")
         if self._parentLayer is None:
             self._parentLayer = FeatureService(
                 url=os.path.dirname(self._url),
@@ -1038,7 +1036,7 @@ class FeatureLayer(abstract.BaseAGOLClass):
         addText = "admin/"
         part1 = url[:res[1]]
         part2 = url[res[1]:]
-        adminURL = "%s%s%s" % (part1, addText, part2)
+        adminURL = f"{part1}{addText}{part2}"
 
         res = AdminFeatureServiceLayer(url=adminURL,
                                        securityHandler=self._securityHandler,
@@ -1331,8 +1329,8 @@ class FeatureLayer(abstract.BaseAGOLClass):
         """ returns the maximum returned records """
         if self._maxRecordCount is None:
             self.__init()
-            if self._maxRecordCount is None:
-                self._maxRecordCount = 1000
+        if self._maxRecordCount is None:
+            self._maxRecordCount = 1000
         return self._maxRecordCount
     @property
     def canModifyLayer(self):
@@ -1468,8 +1466,6 @@ class FeatureLayer(abstract.BaseAGOLClass):
             elif isinstance(value, security.OAuthSecurityHandler):
                 self._token = value.token
                 self._securityHandler = value
-            else:
-                pass
     #----------------------------------------------------------------------
     def addAttachment(self, oid, file_path):
         """ Adds an attachment to a feature service
@@ -1479,21 +1475,20 @@ class FeatureLayer(abstract.BaseAGOLClass):
             Output:
               JSON Repsonse
         """
-        if self.hasAttachments == True:
-            attachURL = self._url + "/%s/addAttachment" % oid
-            params = {'f':'json'}
-            parsed = urlparse.urlparse(attachURL)
-
-            files = {'attachment': file_path}
-            res = self._post(url=attachURL,
-                             param_dict=params,
-                             files=files,
-                             securityHandler=self._securityHandler,
-                             proxy_port=self._proxy_port,
-                             proxy_url=self._proxy_url)
-            return self._unicode_convert(res)
-        else:
+        if self.hasAttachments != True:
             return "Attachments are not supported for this feature service."
+        attachURL = f"{self._url}/{oid}/addAttachment"
+        parsed = urlparse.urlparse(attachURL)
+
+        files = {'attachment': file_path}
+        params = {'f':'json'}
+        res = self._post(url=attachURL,
+                         param_dict=params,
+                         files=files,
+                         securityHandler=self._securityHandler,
+                         proxy_port=self._proxy_port,
+                         proxy_url=self._proxy_url)
+        return self._unicode_convert(res)
     #----------------------------------------------------------------------
     def deleteAttachment(self, oid, attachment_id):
         """ removes an attachment from a feature service feature
@@ -1503,11 +1498,8 @@ class FeatureLayer(abstract.BaseAGOLClass):
             Output:
                JSON response
         """
-        url = self._url + "/%s/deleteAttachments" % oid
-        params = {
-            "f":"json",
-            "attachmentIds" : "%s" % attachment_id
-        }
+        url = f"{self._url}/{oid}/deleteAttachments"
+        params = {"f": "json", "attachmentIds": f"{attachment_id}"}
         return self._post(url, params,
                              securityHandler=self._securityHandler,
                              proxy_port=self._proxy_port,
@@ -1522,11 +1514,8 @@ class FeatureLayer(abstract.BaseAGOLClass):
             Output:
                JSON response
         """
-        url = self._url + "/%s/updateAttachment" % oid
-        params = {
-            "f":"json",
-            "attachmentId" : "%s" % attachment_id
-        }
+        url = f"{self._url}/{oid}/updateAttachment"
+        params = {"f": "json", "attachmentId": f"{attachment_id}"}
         files = {'attachment': file_path }
         res = self._post(url=url,
                              param_dict=params,
@@ -1538,7 +1527,7 @@ class FeatureLayer(abstract.BaseAGOLClass):
     #----------------------------------------------------------------------
     def listAttachments(self, oid):
         """ list attachements for a given OBJECT ID """
-        url = self._url + "/%s/attachments" % oid
+        url = f"{self._url}/{oid}/attachments"
         params = {
             "f":"json"
         }
@@ -1562,8 +1551,8 @@ class FeatureLayer(abstract.BaseAGOLClass):
         if "attachmentInfos" in attachments:
             for attachment in attachments['attachmentInfos']:
                 if "id" in attachment and \
-                   attachment['id'] == attachment_id:
-                    url = self._url + "/%s/attachments/%s" % (oid, attachment_id)
+                       attachment['id'] == attachment_id:
+                    url = f"{self._url}/{oid}/attachments/{attachment_id}"
                     return self._get(url=url, param_dict={"f":'json'},
                                      securityHandler=self._securityHandler,
                                      out_folder=out_folder,
@@ -1585,16 +1574,13 @@ class FeatureLayer(abstract.BaseAGOLClass):
     def create_feature_template(self):
         """creates a feature template"""
         fields = self.fields
-        feat_schema = {}
-
         att = {}
         for fld in fields:
             self._globalIdField
-            if not fld['name'] == self._objectIdField and not fld['name'] == self._globalIdField:
+            if fld['name'] not in [self._objectIdField, self._globalIdField]:
                 att[fld['name']] = ''
 
-        feat_schema['attributes'] = att
-        feat_schema['geometry'] = ''
+        feat_schema = {'attributes': att, 'geometry': ''}
         return Feature(feat_schema)
     #----------------------------------------------------------------------
     def query(self,

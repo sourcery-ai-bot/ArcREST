@@ -50,10 +50,10 @@ class SchematicsService(BaseAGSServer):
         self._json = json.dumps(self._json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, v)
+                setattr(self, f"_{k}", v)
             else:
                 print (k, " - attribute not implemented for Schematics Service")
     #----------------------------------------------------------------------
@@ -109,7 +109,7 @@ class SchematicsService(BaseAGSServer):
         Diagram resource by the REST API.
         """
         params = {"f" : "json"}
-        exportURL = self._url + "/diagrams"
+        exportURL = f"{self._url}/diagrams"
         return self._get(url=exportURL,
                          param_dict=params,
                          securityHandler=self._securityHandler,
@@ -125,7 +125,7 @@ class SchematicsService(BaseAGSServer):
         by the REST API.
         """
         params = {"f" : "json"}
-        exportURL = self._url + "/folders"
+        exportURL = f"{self._url}/folders"
         return self._get(url=exportURL,
                          param_dict=params,
                          securityHandler=self._securityHandler,
@@ -140,7 +140,7 @@ class SchematicsService(BaseAGSServer):
         as an array of Schematic Layer resources by the REST API.
         """
         params = {"f" : "json"}
-        exportURL = self._url + "/schematicLayers"
+        exportURL = f"{self._url}/schematicLayers"
         return self._get(url=exportURL,
                          param_dict=params,
                          securityHandler=self._securityHandler,
@@ -156,7 +156,7 @@ class SchematicsService(BaseAGSServer):
         resources by the REST API.
         """
         params = {"f" : "json"}
-        exportURL = self._url + "/templates"
+        exportURL = f"{self._url}/templates"
         return self._get(url=exportURL,
                          param_dict=params,
                          securityHandler=self._securityHandler,
@@ -208,7 +208,7 @@ class SchematicsService(BaseAGSServer):
         if relatedSchematicObjects:
             params["relatedSchematicObjects"] = relatedSchematicObjects
 
-        exportURL = self._url + "/searchDiagrams"
+        exportURL = f"{self._url}/searchDiagrams"
         return self._get(url=exportURL,
                          param_dict=params,
                          securityHandler=self._securityHandler,

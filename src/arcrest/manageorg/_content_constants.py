@@ -3,6 +3,7 @@ Contains constants to determine if an item type has a file or not to help
 tasks related to moving, updating or managing one's content on Portal or
 ArcGIS Online.
 """
+
 from __future__ import absolute_import
 from __future__ import print_function
 URL_BASED_ITEM_TYPES = ('Feature Service', 'Map Service',
@@ -30,8 +31,10 @@ RELATIONSHIP_TYPES = ('Map2Service', 'WMA2Code',
 
 RELATIONSHIP_DIRECTIONS = ('forward', 'reverse')
 
-URL_ITEM_FILTER = ' OR '.join(['type:"%s"' % t for t in URL_BASED_ITEM_TYPES]) \
+URL_ITEM_FILTER = (
+    ' OR '.join([f'type:"{t}"' for t in URL_BASED_ITEM_TYPES])
     + ' -type:"Web Map" -type:"Map Package"'
+)
 
 WEB_ITEM_FILTER = '((type:"service" -type:"globe" -type:"geodata") OR ' \
     + 'type:"KML" OR type:"WMS" OR type:"Web Map" OR ' \

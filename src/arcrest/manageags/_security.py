@@ -48,10 +48,10 @@ class Security(BaseAGSServer):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                     if not attr.startswith('__') and \
-                    not attr.startswith('_')]
+                        not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+                setattr(self, f"_{k}", json_dict[k])
             else:
                 print( k, " - attribute not implemented in manageags.security.")
             del k
@@ -63,7 +63,7 @@ class Security(BaseAGSServer):
         params = {
             "f": "json",
         }
-        aURL = self._url + "/config"
+        aURL = f"{self._url}/config"
         return self._post(url=aURL, param_dict=params,
                           securityHandler=self._securityHandler,
                           proxy_url=self._proxy_url,
@@ -76,7 +76,7 @@ class Security(BaseAGSServer):
         Inputs:
            securityConfig JSON representation of the new security config
         """
-        url = self._url + "/config/update"
+        url = f"{self._url}/config/update"
         params = {
             "f": "json",
         }
@@ -118,7 +118,7 @@ class Security(BaseAGSServer):
             "rolename" : name,
             "description" : description
         }
-        aURL = self._url + "/roles/add"
+        aURL = f"{self._url}/roles/add"
         return self._post(url=aURL, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -147,7 +147,7 @@ class Security(BaseAGSServer):
             params['description'] = description
         if email is not None:
             params['email'] = email
-        aURL = self._url + "/users/add"
+        aURL = f"{self._url}/users/add"
         return self._post(url=aURL, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -160,7 +160,7 @@ class Security(BaseAGSServer):
             "rolename" : rolename,
             "users" : users
         }
-        rURL = self._url + "/roles/addUsersToRole"
+        rURL = f"{self._url}/roles/addUsersToRole"
         return self._post(url=rURL, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -192,7 +192,7 @@ class Security(BaseAGSServer):
            Output:
               JSON Message
         """
-        aURL = self._url + "/roles/assignPrivilege"
+        aURL = f"{self._url}/roles/assignPrivilege"
         params = {
             "f" : "json",
             "rolename" : rolename,
@@ -223,7 +223,7 @@ class Security(BaseAGSServer):
             "username" : username,
             "roles" : roles
         }
-        uURL = self._url + "/users/assignRoles"
+        uURL = f"{self._url}/users/assignRoles"
         return self._post(url=uURL, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -236,7 +236,7 @@ class Security(BaseAGSServer):
            invoked by an administrator in the system. To re-enable this
            account, use the Enable Primary Site Administrator operation.
         """
-        dURL = self._url + "/psa/disable"
+        dURL = f"{self._url}/psa/disable"
         params = {
             "f" : "json"
         }
@@ -258,7 +258,7 @@ class Security(BaseAGSServer):
            option to re-enable the primary site administrator. This utility
            is described in more detail in the ArcGIS Server Help.
         """
-        eURL = self._url + "/psa/enable"
+        eURL = f"{self._url}/psa/enable"
         params = {
             "f" : "json"
         }
@@ -279,7 +279,7 @@ class Security(BaseAGSServer):
             "f" : "json",
             "rolename" : rolename
         }
-        pURL = self._url + "/roles/getPrivilege"
+        pURL = f"{self._url}/roles/getPrivilege"
         return self._post(url=pURL,
                              param_dict=params,
                              securityHandler=self._securityHandler,
@@ -298,7 +298,7 @@ class Security(BaseAGSServer):
             "f" : "json",
             "username" : username
         }
-        url = self._url + "/users/getPrivilege"
+        url = f"{self._url}/users/getPrivilege"
         return self._post(url=url, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -318,7 +318,7 @@ class Security(BaseAGSServer):
             Output:
                returns JSON messages as dictionary
         """
-        uURL = self._url + "/roles/getRoles"
+        uURL = f"{self._url}/roles/getRoles"
         params = {
             "f" : "json",
             "startIndex" : startIndex,
@@ -337,7 +337,7 @@ class Security(BaseAGSServer):
            Output:
               JSON response as dictionary
         """
-        uURL = self._url + "/roles/getRolesByPrivilege"
+        uURL = f"{self._url}/roles/getRolesByPrivilege"
         params = {
             "f" : "json",
             "privilege" : privilege
@@ -356,7 +356,7 @@ class Security(BaseAGSServer):
               filter - filter to be applied to the resultant role set.
               maxCount - maximum number of results to return for this query
         """
-        uURL = self._url + "/roles/getRolesForUser"
+        uURL = f"{self._url}/roles/getRolesForUser"
         params = {
             "f" : "json",
             "username" : username
@@ -386,7 +386,7 @@ class Security(BaseAGSServer):
            Output:
               JSON response message as dictionary
         """
-        uURL = self._url + "/users/getUsers"
+        uURL = f"{self._url}/users/getUsers"
         params={
             "f" : "json",
             "startIndex" : startIndex,
@@ -409,14 +409,14 @@ class Security(BaseAGSServer):
            Output:
               JSON Message as dictionary
         """
-        uURL = self._url + "/roles/getUsersWithinRole"
+        uURL = f"{self._url}/roles/getUsersWithinRole"
         params = {
             "f" : "json",
             "rolename" : rolename,
             "maxCount" : maxCount
         }
         if filter is not None and \
-           isinstance(filter, str):
+               isinstance(filter, str):
             params['filter'] = filter
         return self._post(url=uURL, param_dict=params,
                              securityHandler=self._securityHandler,
@@ -429,7 +429,7 @@ class Security(BaseAGSServer):
         params = {
             "f" : "json"
         }
-        uURL = self._url + "/psa"
+        uURL = f"{self._url}/psa"
         return self._get(url=uURL, param_dict=params,
                             securityHandler=self._securityHandler,
                             proxy_url=self._proxy_url,
@@ -449,7 +449,7 @@ class Security(BaseAGSServer):
             "f" : "json",
             "rolename" : rolename
         }
-        uURL = self._url + "/roles/remove"
+        uURL = f"{self._url}/roles/remove"
         return self._post(url=uURL,
                              param_dict=params,
                              securityHandler=self._securityHandler,
@@ -467,7 +467,7 @@ class Security(BaseAGSServer):
            Ouput:
               JSON Messages as dictionary
         """
-        uURL = self._url + "/users/removeRoles"
+        uURL = f"{self._url}/users/removeRoles"
         params = {
             "f" : "json",
             "username" : username,
@@ -490,7 +490,7 @@ class Security(BaseAGSServer):
             "f" : 'json',
             "username" : username
         }
-        uURL = self._url + "/users/remove"
+        uURL = f"{self._url}/users/remove"
         return self._post(url=uURL, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -510,7 +510,7 @@ class Security(BaseAGSServer):
             "rolename" : rolename,
             "users" : users
         }
-        uURL = self._url + "/roles/removeUsersFromRole"
+        uURL = f"{self._url}/roles/removeUsersFromRole"
         return self._post(url=uURL, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -524,7 +524,7 @@ class Security(BaseAGSServer):
         params = {
         "f" : "json"
         }
-        uURL = self._url + "/roles"
+        uURL = f"{self._url}/roles"
         return self._get(url=uURL, param_dict=params,
                             securityHandler=self._securityHandler,
                             proxy_url=self._proxy_url,
@@ -546,7 +546,7 @@ class Security(BaseAGSServer):
             "filter" : filter,
             "maxCount" : maxCount
         }
-        uURL = self._url + "/roles/search"
+        uURL = f"{self._url}/roles/search"
         return self._post(url=uURL, param_dict=params,
                             securityHandler=self._securityHandler,
                             proxy_url=self._proxy_url,
@@ -568,7 +568,7 @@ class Security(BaseAGSServer):
             "filter" : filter,
             "maxCount" : maxCount
         }
-        uURL = self._url + "/users/search"
+        uURL = f"{self._url}/users/search"
         return self._post(url=uURL, param_dict=params,
                             securityHandler=self._securityHandler,
                             proxy_url=self._proxy_url,
@@ -592,7 +592,7 @@ class Security(BaseAGSServer):
             params['username'] = username
         if password is not None:
             params['password'] = password
-        uURL = self._url + "/psa/update"
+        uURL = f"{self._url}/psa/update"
         return self._post(url=uURL, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -612,7 +612,7 @@ class Security(BaseAGSServer):
         }
         if description is not None:
             params['description'] = description
-        uURL = self._url + "/roles/update"
+        uURL = f"{self._url}/roles/update"
         return self._post(url=uURL, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,
@@ -641,7 +641,7 @@ class Security(BaseAGSServer):
             params['description'] = description
         if email is not None:
             params['email'] = email
-        uURL = self._url + "/users/update"
+        uURL = f"{self._url}/users/update"
         return self._post(url=uURL, param_dict=params,
                              securityHandler=self._securityHandler,
                              proxy_url=self._proxy_url,

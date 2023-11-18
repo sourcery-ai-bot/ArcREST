@@ -85,19 +85,14 @@ class FeatureLayer_Depricated(BaseAGSServer):
         self._proxy_url = proxy_url
         self._proxy_port = proxy_port
         self._url = url
-        if securityHandler is not None and \
-           isinstance(securityHandler,
+        if securityHandler is not None:
+            if isinstance(securityHandler,
                       (security.AGSTokenSecurityHandler,
                        security.ArcGISTokenSecurityHandler,
                        security.PortalServerSecurityHandler)):
-            self._securityHandler = securityHandler
-        if not securityHandler is None:
+                self._securityHandler = securityHandler
             if hasattr(securityHandler, 'referer_url'):
                 self._referer_url = securityHandler.referer_url
-        elif securityHandler is None:
-            pass
-        else:
-            raise AttributeError("Security Handler must type of security.AGSTokenSecurityHandler")
         if initialize:
             self.__init()
     #----------------------------------------------------------------------
@@ -117,12 +112,12 @@ class FeatureLayer_Depricated(BaseAGSServer):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, v)
+                setattr(self, f"_{k}", v)
             else:
-                print("%s - attribute not implemented for layer.FeatureLayer." % k)
+                print(f"{k} - attribute not implemented for layer.FeatureLayer.")
     #----------------------------------------------------------------------
     @property
     def indexes(self):
@@ -392,8 +387,8 @@ class FeatureLayer_Depricated(BaseAGSServer):
     def maxRecordCount(self):
         if self._maxRecordCount is None:
             self.__init()
-            if self._maxRecordCount is None:
-                self._maxRecordCount = 1000
+        if self._maxRecordCount is None:
+            self._maxRecordCount = 1000
         return self._maxRecordCount
     @property
     def canModifyLayer(self):
@@ -486,7 +481,7 @@ class FeatureLayer_Depricated(BaseAGSServer):
            Output:
               JSON message as dictionary
         """
-        url = self._url + "/addFeatures"
+        url = f"{self._url}/addFeatures"
         params = {
             "f" : "json"
         }
@@ -494,8 +489,7 @@ class FeatureLayer_Depricated(BaseAGSServer):
             params['gdbVersion'] = gdbVersion
         if isinstance(rollbackOnFailure, bool):
             params['rollbackOnFailure'] = rollbackOnFailure
-        if isinstance(features, list) or \
-           isinstance(features, FeatureSet):
+        if isinstance(features, (list, FeatureSet)):
             params['features'] = json.dumps([feature.asDictionary for feature in features],
                                             default=_date_handler)
         elif isinstance(features, Feature):
@@ -540,20 +534,20 @@ class FeatureLayer_Depricated(BaseAGSServer):
         if attachmentTable is None:
             count = 0
             bins = 1
-            uURL = self._url + "/addFeatures"
+            uURL = f"{self._url}/addFeatures"
             max_chunk = 250
             js = json.loads(self._unicode_convert(
                 featureclass_to_json(fc)))
             js = js['features']
             if lowerCaseFieldNames == True:
                 for feat in js:
-                    feat['attributes'] = dict((k.lower(), v) for k,v in feat['attributes'].items())
+                    feat['attributes'] = {k.lower(): v for k,v in feat['attributes'].items()}
             if len(js) == 0:
                 return {'addResults':None}
             if len(js) <= max_chunk:
                 bins = 1
             else:
-                bins = int(len(js)/max_chunk)
+                bins = len(js) // max_chunk
                 if len(js) % max_chunk > 0:
                     bins += 1
             chunks = self._chunks(l=js, n=bins)
@@ -570,32 +564,31 @@ class FeatureLayer_Depricated(BaseAGSServer):
                                        proxy_url=self._proxy_url)
                 if messages is None:
                     messages = result
+                elif 'addResults' in result:
+                    messages['addResults'] = (
+                        messages['addResults'] + result['addResults']
+                        if 'addResults' in messages
+                        else result['addResults']
+                    )
                 else:
-                    if 'addResults' in result:
-                        if 'addResults' in messages:
-                            messages['addResults'] = messages['addResults'] + result['addResults']
-                        else:
-                            messages['addResults'] = result['addResults']
-                    else:
-                        messages['errors'] = result
+                    messages['errors'] = result
 
                 del params
                 del result
-            return messages
         else:
             oid_field = get_OID_field(fc)
             OIDs = get_records_with_attachments(attachment_table=attachmentTable)
-            fl = create_feature_layer(fc, "%s not in ( %s )" % (oid_field, ",".join(OIDs)))
+            fl = create_feature_layer(fc, f'{oid_field} not in ( {",".join(OIDs)} )')
             result = self.addFeatures(fl)
             if result is not None:
                 messages.update(result)
             del fl
             for oid in OIDs:
-                fl = create_feature_layer(fc, "%s = %s" % (oid_field, oid), name="layer%s" % oid)
+                fl = create_feature_layer(fc, f"{oid_field} = {oid}", name=f"layer{oid}")
                 msgs = self.addFeatures(fl)
                 for result in msgs['addResults']:
                     oid_fs = result['objectId']
-                    sends = get_attachment_data(attachmentTable, sql="%s = %s" % (rel_object_field, oid))
+                    sends = get_attachment_data(attachmentTable, sql=f"{rel_object_field} = {oid}")
                     result['addAttachmentResults'] = []
                     for s in sends:
                         attRes = self.addAttachment(oid_fs, s['blob'])
@@ -613,7 +606,8 @@ class FeatureLayer_Depricated(BaseAGSServer):
                 del fl
                 del oid
             del OIDs
-            return messages
+
+        return messages
     #----------------------------------------------------------------------
 
     def addAttachments(self,
@@ -655,23 +649,21 @@ class FeatureLayer_Depricated(BaseAGSServer):
              parameter only applies if the supportsAttachmentsByUploadId
              property of the layer is true.
         """
-        if self.hasAttachments == True:
-            url = self._url + "/%s/addAttachment" % featureId
-            params = {'f':'json'}
-            if not uploadId is None:
-                params['uploadId'] = uploadId
-            if not gdbVersion is None:
-                params['gdbVersion'] = gdbVersion
-            files = {}
-            files['attachment'] = attachment
-            return self._post(url=url,
-                              param_dict=params,
-                              files=files,
-                              securityHandler=self._securityHandler,
-                              proxy_url=self._proxy_url,
-                              proxy_port=self._proxy_port)
-        else:
+        if self.hasAttachments != True:
             return "Attachments are not supported for this feature service."
+        url = f"{self._url}/{featureId}/addAttachment"
+        params = {'f':'json'}
+        if uploadId is not None:
+            params['uploadId'] = uploadId
+        if gdbVersion is not None:
+            params['gdbVersion'] = gdbVersion
+        files = {'attachment': attachment}
+        return self._post(url=url,
+                          param_dict=params,
+                          files=files,
+                          securityHandler=self._securityHandler,
+                          proxy_url=self._proxy_url,
+                          proxy_port=self._proxy_port)
     #----------------------------------------------------------------------
     def deleteFeatures(self,
                        objectIds="",
@@ -702,7 +694,7 @@ class FeatureLayer_Depricated(BaseAGSServer):
             Output:
                JSON response as dictionary
         """
-        dURL = self._url + "/deleteFeatures"
+        dURL = f"{self._url}/deleteFeatures"
         params = {
             "f": "json",
             'rollbackOnFailure' : rollbackOnFailure
@@ -710,17 +702,17 @@ class FeatureLayer_Depricated(BaseAGSServer):
         if gdbVersion is not None:
             params['gdbVersion'] = gdbVersion
         if geometryFilter is not None and \
-           isinstance(geometryFilter, filters.GeometryFilter):
+               isinstance(geometryFilter, filters.GeometryFilter):
             gfilter = geometryFilter.filter
             params['geometry'] = gfilter['geometry']
             params['geometryType'] = gfilter['geometryType']
             params['inSR'] = gfilter['inSR']
             params['spatialRel'] = gfilter['spatialRel']
         if where is not None and \
-           where != "":
+               where != "":
             params['where'] = where
         if objectIds is not None and \
-           objectIds != "":
+               objectIds != "":
             params['objectIds'] = objectIds
         result = self._post(url=dURL, param_dict=params,
                                securityHandler=self._securityHandler,
@@ -759,25 +751,25 @@ class FeatureLayer_Depricated(BaseAGSServer):
            Output:
               dictionary of messages
         """
-        editURL = self._url + "/applyEdits"
+        editURL = f"{self._url}/applyEdits"
         params = {"f": "json",
                   'rollbackOnFailure' : rollbackOnFailure
                   }
-        if not gdbVersion is None:
+        if gdbVersion is not None:
             params['gdbVersion'] = gdbVersion
         if len(addFeatures) > 0 and \
-           isinstance(addFeatures[0], Feature):
+               isinstance(addFeatures[0], Feature):
             params['adds'] = json.dumps([f.asDictionary for f in addFeatures],
                                         default=_date_handler)
         elif isinstance(addFeatures, FeatureSet):
             params['adds'] = json.dumps([f.asDictionary for f in addFeatures],
                                         default=_date_handler)
         if len(updateFeatures) > 0 and \
-           isinstance(updateFeatures[0], Feature):
+               isinstance(updateFeatures[0], Feature):
             params['updates'] = json.dumps([f.asDictionary for f in updateFeatures],
                                            default=_date_handler)
         if deleteFeatures is not None and \
-           isinstance(deleteFeatures, str):
+               isinstance(deleteFeatures, str):
             params['deletes'] = deleteFeatures
         return self._post(url=editURL, param_dict=params,
                              securityHandler=self._securityHandler,
@@ -805,22 +797,25 @@ class FeatureLayer_Depricated(BaseAGSServer):
         if isinstance(features, Feature):
             params['features'] = json.dumps([features.asDictionary])
         elif isinstance(features, list):
-            vals = []
-            for feature in features:
-                if isinstance(feature, Feature):
-                    vals.append(feature.asDictionary)
+            vals = [
+                feature.asDictionary
+                for feature in features
+                if isinstance(feature, Feature)
+            ]
             params['features'] = json.dumps(vals)
         elif isinstance(features, FeatureSet):
             params['features'] = json.dumps([f.asDictionary for f in features],
                                             default=_date_handler)
         else:
             return {'message' : "invalid inputs"}
-        updateURL = self._url + "/updateFeatures"
-        res = self._post(url=updateURL,
-                            securityHandler=self._securityHandler,
-                            param_dict=params, proxy_port=self._proxy_port,
-                            proxy_url=self._proxy_url)
-        return res
+        updateURL = f"{self._url}/updateFeatures"
+        return self._post(
+            url=updateURL,
+            securityHandler=self._securityHandler,
+            param_dict=params,
+            proxy_port=self._proxy_port,
+            proxy_url=self._proxy_url,
+        )
     #----------------------------------------------------------------------
     def query(self,
               where="1=1",
@@ -886,19 +881,19 @@ class FeatureLayer_Depricated(BaseAGSServer):
                   }
         if outSR is not None:
             params['outSR'] = outSR
-        if not maxAllowableOffset is None:
+        if maxAllowableOffset is not None:
             params['maxAllowableOffset'] = maxAllowableOffset
-        if not geometryPrecision is None:
+        if geometryPrecision is not None:
             params['geometryPrecision'] = geometryPrecision
         for k,v in kwargs.items():
             params[k] = v
         if returnDistinctValues:
             params["returnGeometry"] = False
-        if not timeFilter is None and \
-           isinstance(timeFilter, filters.TimeFilter):
+        if timeFilter is not None and isinstance(timeFilter, filters.TimeFilter):
             params['time'] = timeFilter.filter
-        if not geometryFilter is None and \
-           isinstance(geometryFilter, filters.GeometryFilter):
+        if geometryFilter is not None and isinstance(
+            geometryFilter, filters.GeometryFilter
+        ):
             gf = geometryFilter.filter
             params['geometry'] = gf['geometry']
             params['geometryType'] = gf['geometryType']
@@ -908,36 +903,38 @@ class FeatureLayer_Depricated(BaseAGSServer):
                 params['buffer'] = gf['buffer']
             if "units" in gf:
                 params['units'] = gf['units']
-        if not groupByFieldsForStatistics is None:
+        if groupByFieldsForStatistics is not None:
             params['groupByFieldsForStatistics'] = groupByFieldsForStatistics
-        if not statisticFilter is None and \
-           isinstance(statisticFilter, filters.StatisticFilter):
+        if statisticFilter is not None and isinstance(
+            statisticFilter, filters.StatisticFilter
+        ):
             params['outStatistics'] = statisticFilter.filter
-        fURL = self._url + "/query"
+        fURL = f"{self._url}/query"
         results = self._post(fURL, params,
                                securityHandler=self._securityHandler,
                                proxy_port=self._proxy_port,
                                proxy_url=self._proxy_url)
         if 'error' in results:
             raise ValueError (results)
-        if not returnCountOnly and not returnIDsOnly and \
-           not returnDistinctValues and not returnExtentOnly:
-            if returnFeatureClass:
-                json_text = json.dumps(results)
-                temp = scratchFolder() + os.sep + uuid.uuid4().get_hex() + ".json"
-                with open(temp, 'wb') as writer:
-                    writer.write(json_text)
-                    writer.flush()
-                del writer
-                fc = json_to_featureclass(json_file=temp,
-                                          out_fc=out_fc)
-                os.remove(temp)
-                return fc
-            else:
-                return FeatureSet.fromJSON(json.dumps(results))
-        else:
+        if (
+            returnCountOnly
+            or returnIDsOnly
+            or returnDistinctValues
+            or returnExtentOnly
+        ):
             return results
-        return
+        if not returnFeatureClass:
+            return FeatureSet.fromJSON(json.dumps(results))
+        json_text = json.dumps(results)
+        temp = scratchFolder() + os.sep + uuid.uuid4().get_hex() + ".json"
+        with open(temp, 'wb') as writer:
+            writer.write(json_text)
+            writer.flush()
+        del writer
+        fc = json_to_featureclass(json_file=temp,
+                                  out_fc=out_fc)
+        os.remove(temp)
+        return fc
     #----------------------------------------------------------------------
     def queryRelatedRecords(self,
                             objectIds,
@@ -1025,11 +1022,14 @@ class FeatureLayer_Depricated(BaseAGSServer):
             params['maxAllowableOffset'] = maxAllowableOffset
         if geometryPrecision is not None:
             params['geometryPrecision'] = geometryPrecision
-        quURL = self._url + "/queryRelatedRecords"
-        res = self._get(url=quURL, param_dict=params,
-                        securityHandler=self._securityHandler,
-                        proxy_url=self._proxy_url, proxy_port=self._proxy_port)
-        return res
+        quURL = f"{self._url}/queryRelatedRecords"
+        return self._get(
+            url=quURL,
+            param_dict=params,
+            securityHandler=self._securityHandler,
+            proxy_url=self._proxy_url,
+            proxy_port=self._proxy_port,
+        )
     #----------------------------------------------------------------------
     def calculate(self, where, calcExpression, sqlFormat="standard"):
         """
@@ -1069,7 +1069,7 @@ class FeatureLayer_Depricated(BaseAGSServer):
                                               "value" : "R1"})
         {'updatedFeatureCount': 1, 'success': True}
         """
-        url = self._url + "/calculate"
+        url = f"{self._url}/calculate"
         params = {
             "f" : "json",
             "where" : where,
@@ -1120,9 +1120,9 @@ class FeatureLayer_Depricated(BaseAGSServer):
            completeness.
            Values: where | expression | statement
         """
-        url = self._url + "/validateSQL"
-        if not sqlType.lower() in ['where', 'expression', 'statement']:
-            raise Exception("Invalid Input for sqlType: %s" % sqlType)
+        url = f"{self._url}/validateSQL"
+        if sqlType.lower() not in ['where', 'expression', 'statement']:
+            raise Exception(f"Invalid Input for sqlType: {sqlType}")
         params = {
             "f" : "json",
             "sql" : sql,
@@ -1146,17 +1146,12 @@ class GroupLayer(FeatureLayer):
         self._proxy_port = proxy_port
         self._proxy_url = proxy_url
         self._url = url
-        if securityHandler is not None and \
-           isinstance(securityHandler,
+        if securityHandler is not None:
+            if isinstance(securityHandler,
                       (security.AGSTokenSecurityHandler,
                        security.ArcGISTokenSecurityHandler)):
-            self._securityHandler = securityHandler
-        if not securityHandler is None:
+                self._securityHandler = securityHandler
             self._referer_url = securityHandler.referer_url
-        elif securityHandler is None:
-            pass
-        else:
-            raise AttributeError("Security Handler must type of security.AGSTokenSecurityHandler")
         self.__init()
     def __init(self):
         """ inializes the properties """
@@ -1172,12 +1167,12 @@ class GroupLayer(FeatureLayer):
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
-                      not attr.startswith('_')]
+                          not attr.startswith('_')]
         for k,v in json_dict.items():
             if k in attributes:
-                setattr(self, "_"+ k, v)
+                setattr(self, f"_{k}", v)
             else:
-                print("%s - attribute not implemented in GroupLayer." % k)
+                print(f"{k} - attribute not implemented in GroupLayer.")
 ########################################################################
 class SchematicsLayer(FeatureLayer):
     """ represents a Schematics Layer  """
@@ -1215,8 +1210,7 @@ class DynamicMapLayer(DynamicData):
         """ converts the object to a dictionary """
         template = {"type" : self._type,
                     "mapLayerId" : self._mapLayerId}
-        if not self._gdbVersion is None and\
-           self._gdbVersion != "":
+        if self._gdbVersion is not None and self._gdbVersion != "":
             template['gdbVersion'] = self._gdbVersion
         return template
 ########################################################################
@@ -1237,9 +1231,9 @@ class DynamicDataLayer(DynamicData):
         else:
             raise TypeError("Invalid datasource object")
         if fields is not None and \
-           type(fields) is list:
+               type(fields) is list:
             self._fields = fields
-        elif not type(fields) is list:
+        elif type(fields) is not list:
             raise TypeError("Invalid fields object, must be a list")
     #----------------------------------------------------------------------
     @property
@@ -1254,7 +1248,7 @@ class DynamicDataLayer(DynamicData):
             "type": "dataLayer",
             "dataSource": self._dataSource
         }
-        if not self._fields is None:
+        if self._fields is not None:
             template['fields'] = self._fields
         return template
 
@@ -1435,12 +1429,11 @@ class QueryTableDataSource(DataSource):
         self._query = query
         self._oidFields = oidFields
         self._wkid = wkid
-        if geometryType != "" and \
-           geometryType in self._allowedTypes:
-            self._geometryType = geometryType
-        elif geometryType != "" and \
-             not geometryType in self._allowedTypes:
-            raise TypeError("geometryType is invalid")
+        if geometryType != "":
+            if geometryType in self._allowedTypes:
+                self._geometryType = geometryType
+            else:
+                raise TypeError("geometryType is invalid")
     #----------------------------------------------------------------------
     @property
     def datatype(self):

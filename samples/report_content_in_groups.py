@@ -51,20 +51,20 @@ if __name__ == "__main__":
     proxy_port = None
     proxy_url = None
 
-    securityinfo = {}
-    securityinfo['security_type'] = 'Portal'#LDAP, NTLM, OAuth, Portal, PKI
-    securityinfo['username'] = ""#<UserName>
-    securityinfo['password'] = ""#<Password>
-    securityinfo['org_url'] = "http://www.arcgis.com"
-    securityinfo['proxy_url'] = proxy_url
-    securityinfo['proxy_port'] = proxy_port
-    securityinfo['referer_url'] = None
-    securityinfo['token_url'] = None
-    securityinfo['certificatefile'] = None
-    securityinfo['keyfile'] = None
-    securityinfo['client_id'] = None
-    securityinfo['secret_id'] = None
-
+    securityinfo = {
+        'security_type': 'Portal',
+        'username': "",
+        'password': "",
+        'org_url': "http://www.arcgis.com",
+        'proxy_url': proxy_url,
+        'proxy_port': proxy_port,
+        'referer_url': None,
+        'token_url': None,
+        'certificatefile': None,
+        'keyfile': None,
+        'client_id': None,
+        'secret_id': None,
+    }
     groups = ["Demographic Content"] #Name of groups
     outputlocation = r"C:\TEMP"
     outputfilename = "group.json"
@@ -80,44 +80,43 @@ if __name__ == "__main__":
             iconPath = os.path.join(outputlocation,"icons")
             if not os.path.exists(iconPath):
                 os.makedirs(iconPath)
-                
+
             if sys.version_info[0] == 2:
                 access = 'wb+'
                 kwargs = {}
             else:
                 access = 'wt+'
                 kwargs = {'newline':''}
-            file = open(fileName, "w")
-            with open(fileName, access, **kwargs) as csvFile:
-                idwriter = csv.writer(csvFile)
-                for groupName in groups:
-                    results = orgt.getGroupContent(groupName=groupName,
-                                                   onlyInOrg=True,
-                                                   onlyInUser=True)
+            with open(fileName, "w") as file:
+                with open(fileName, access, **kwargs) as csvFile:
+                    idwriter = csv.writer(csvFile)
+                    for groupName in groups:
+                        results = orgt.getGroupContent(groupName=groupName,
+                                                       onlyInOrg=True,
+                                                       onlyInUser=True)
 
-                    if not results is None:
-                        for result in results:
-                            idwriter.writerow([result['title'],result['id']])
-                            thumbLocal = orgt.getThumbnailForItem(itemId=result['id'],
-                                                                  fileName=result['title'],
-                                                              filePath=iconPath)
-                            result['thumbnail']=thumbLocal
-                            groupRes.append(result)
+                        if results is not None:
+                            for result in results:
+                                idwriter.writerow([result['title'],result['id']])
+                                thumbLocal = orgt.getThumbnailForItem(itemId=result['id'],
+                                                                      fileName=result['title'],
+                                                                  filePath=iconPath)
+                                result['thumbnail']=thumbLocal
+                                groupRes.append(result)
 
-                if len(groupRes) > 0:
-                    print ("%s items found" % str(len(groupRes)))
-                    groupRes = _unicode_convert(groupRes)
-                    file.write(json.dumps(groupRes, ensure_ascii=False, sort_keys=True, indent=4, separators=(',', ': ')))
-            file.close()
-    except (common.ArcRestHelperError) as e:
-        print ("error in function: %s" % e[0]['function'])
-        print ("error on line: %s" % e[0]['line'])
-        print ("error in file name: %s" % e[0]['filename'])
-        print ("with error message: %s" % e[0]['synerror'])
+                    if groupRes:
+                        print(f"{len(groupRes)} items found")
+                        groupRes = _unicode_convert(groupRes)
+                        file.write(json.dumps(groupRes, ensure_ascii=False, sort_keys=True, indent=4, separators=(',', ': ')))
+    except common.ArcRestHelperError as e:
+        print(f"error in function: {e[0]['function']}")
+        print(f"error on line: {e[0]['line']}")
+        print(f"error in file name: {e[0]['filename']}")
+        print(f"with error message: {e[0]['synerror']}")
         if 'arcpyError' in e[0]:
-            print ("with arcpy message: %s" % e[0]['arcpyError'])
+            print(f"with arcpy message: {e[0]['arcpyError']}")
     except:
         line, filename, synerror = trace()
-        print ("error on line: %s" % line)
-        print ("error in file name: %s" % filename)
-        print ("with error message: %s" % synerror)
+        print(f"error on line: {line}")
+        print(f"error in file name: {filename}")
+        print(f"with error message: {synerror}")

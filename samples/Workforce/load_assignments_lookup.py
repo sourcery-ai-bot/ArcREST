@@ -21,7 +21,7 @@ def UnicodeDictReader(utf8_data, **kwargs):
     if six.PY3 == True:
         csv_reader = csv.DictReader(utf8_data, **kwargs)
         for row in csv_reader:
-            yield {key: value for key, value in row.items()}
+            yield dict(row.items())
     else:
         csv_reader = csv.DictReader(utf8_data, **kwargs)
         for row in csv_reader:
@@ -46,67 +46,55 @@ def main():
     try:
         proxy_port = None
         proxy_url = None
-    
-        securityinfo = {}
-        securityinfo['security_type'] = 'Portal'#LDAP, NTLM, OAuth, Portal, PKI
-        securityinfo['username'] = ""#<UserName>
-        securityinfo['password'] = ""#<Password>
-        securityinfo['org_url'] = "http://www.arcgis.com"
-        securityinfo['proxy_url'] = proxy_url
-        securityinfo['proxy_port'] = proxy_port
-        securityinfo['referer_url'] = None
-        securityinfo['token_url'] = None
-        securityinfo['certificatefile'] = None
-        securityinfo['keyfile'] = None
-        securityinfo['client_id'] = None
-        securityinfo['secret_id'] = None
-    
-    
-        workforceProjectID = '' #Workforce project number
 
-        assignmentAreasID = '' #ID of service to get centroids from
-        assignmentAreaLayerName = ''#layer in servuce
-        assignmentAreaNameField = ''#field with name of id area
-        
-        csvPath = r".\dataToLookup.csv"#<Path with data>
-        workerCol = 'worker'
-        areaCol  = 'area'
-        descriptionCol = "description"
-        notesCol = "notes"
-        supervisorCol = "supervisor"
-         
-        assignmentType = 2
-        status = 1
-        
-        workerNameToID = {}
-        dispatcherNameToID = {}
-        areaNameToID = {}
+        securityinfo = {
+            'security_type': 'Portal',
+            'username': "",
+            'password': "",
+            'org_url': "http://www.arcgis.com",
+            'proxy_url': proxy_url,
+            'proxy_port': proxy_port,
+            'referer_url': None,
+            'token_url': None,
+            'certificatefile': None,
+            'keyfile': None,
+            'client_id': None,
+            'secret_id': None,
+        }
         fst = featureservicetools.featureservicetools(securityinfo)
         if fst.valid == False:
             print (fst.message)
         else:
             portalAdmin = arcrest.manageorg.Administration(securityHandler=fst.securityhandler)
+            assignmentAreasID = '' #ID of service to get centroids from
             #Get the assignment areas
             fs = fst.GetFeatureService(itemId=assignmentAreasID,returnURLOnly=False)
-            if not fs is None:
+            areaNameToID = {}
+            if fs is not None:
+                assignmentAreaLayerName = ''#layer in servuce
                 fs_url = fst.GetLayerFromFeatureService(fs=fs,layerName=assignmentAreaLayerName,returnURLOnly=True)
-                if not fs_url is None:
+                if fs_url is not None:
 
                     fl = FeatureLayer(
                         url=fs_url,
                         securityHandler=fst.securityhandler,
                         proxy_port=proxy_port,
                         proxy_url=proxy_url,
-                        initialize=True)                    
+                        initialize=True)
+                    assignmentAreaNameField = ''#field with name of id area
+
                     areaResults =  fl.query(**{'where':"1=1",'outSR':'102100','out_fields':assignmentAreaNameField,'returnGeometry':False,'returnCentroid':True})
-                   
+
                     for area in areaResults:
                         arDict = area.asDictionary
                         areaNameToID[arDict['attributes'][assignmentAreaNameField]] = arDict['centroid']
-                    
+
+            workforceProjectID = '' #Workforce project number
+
             #Get the workers
             item = portalAdmin.content.getItem(itemId=workforceProjectID)
             itemData = item.itemData()
+            workerNameToID = {}
             if 'workers' in itemData:
                 fl = FeatureLayer(
                     url=itemData['workers']['url'],
@@ -114,11 +102,12 @@ def main():
                     proxy_port=proxy_port,
                     proxy_url=proxy_url,
                     initialize=True)
-            
+
                 workersResults = fl.query(where="1=1",out_fields='OBJECTID, NAME',returnGeometry=False)
                 for worker in workersResults:
                     workerNameToID[worker.get_value('name')] = worker.get_value('OBJECTID')
-            
+
+            dispatcherNameToID = {}
             if 'dispatchers' in itemData:
                 fl = FeatureLayer(
                     url=itemData['dispatchers']['url'],
@@ -126,15 +115,15 @@ def main():
                     proxy_port=proxy_port,
                     proxy_url=proxy_url,
                     initialize=True)
-            
+
                 dispatcherResults = fl.query(where="1=1",out_fields='OBJECTID, NAME',returnGeometry=False)
                 for dispatcher in dispatcherResults:
                     dispatcherNameToID[dispatcher.get_value('name')] = dispatcher.get_value('OBJECTID')
-                    
-    
+
+
             if 'assignments' in itemData:
                 features = []
-                
+
                 fl = FeatureLayer(
                     url=itemData['assignments']['url'],
                     securityHandler=fst.securityhandler,
@@ -142,58 +131,66 @@ def main():
                     proxy_url=proxy_url,
                     initialize=True)
                 print(fl.deleteFeatures(where="1=1"))
+                csvPath = r".\dataToLookup.csv"#<Path with data>
+                workerCol = 'worker'
+                areaCol  = 'area'
+                descriptionCol = "description"
+                notesCol = "notes"
+                supervisorCol = "supervisor"
+
+                assignmentType = 2
+                status = 1
+
                 with open(csvPath) as csvfile:
                     reader = UnicodeDictReader(csvfile)
                     for row in reader:
-                        json_string={}
-                        json_string['geometry'] = {}
-                       
+                        json_string = {'geometry': {}}
                         centroidInfo = areaNameToID[row[areaCol].strip()]
-                        
+
                         json_string['geometry']['x'] = centroidInfo['x']
                         json_string['geometry']['y'] = centroidInfo['y']
-                        json_string['attributes'] ={}
-                        json_string['attributes']['workerId'] = workerNameToID[row[workerCol].strip()]
+                        json_string['attributes'] = {
+                            'workerId': workerNameToID[row[workerCol].strip()]
+                        }
                         json_string['attributes']['description'] = row[descriptionCol]
                         json_string['attributes']['notes'] = row[notesCol]
                         json_string['attributes']['assignmentType'] = assignmentType
                         json_string['attributes']['status'] = status
                         json_string['attributes']['dispatcherId'] = dispatcherNameToID[row[supervisorCol].strip()]
-                        
-                         
+
+
                         features.append(Feature(json_string=json_string))
                     results = fl.addFeature(features=features)
-    
-                    if 'error' in results:
-                        print ("Error in response from server:  %s" % results['error'])
-    
-                    else:
-                        if results['addResults'] is not None:
-                            featSucces = 0
-                            for result in results['addResults']:
-                                if 'success' in result:
-                                    if result['success'] == False:
-                                        if 'error' in result:
-                                            print ("Error info: %s" % (result['error']))
-                                    else:
-                                        featSucces = featSucces + 1
-    
-                            print ("%s features added to %s" % (featSucces,fl.name))
-                        else:
-                            print ("0 features added to %s /n result info %s" % (fl.name,str(results)))             
 
-    except (common.ArcRestHelperError) as e:
-        print ("error in function: %s" % e[0]['function'])
-        print ("error on line: %s" % e[0]['line'])
-        print ("error in file name: %s" % e[0]['filename'])
-        print ("with error message: %s" % e[0]['synerror'])
+                    if 'error' in results:
+                        print(f"Error in response from server:  {results['error']}")
+
+                    elif results['addResults'] is None:
+                        print(f"0 features added to {fl.name} /n result info {str(results)}")             
+
+                    else:
+                        featSucces = 0
+                        for result in results['addResults']:
+                            if 'success' in result:
+                                if result['success'] == False:
+                                    if 'error' in result:
+                                        print(f"Error info: {result['error']}")
+                                else:
+                                    featSucces = featSucces + 1
+
+                        print(f"{featSucces} features added to {fl.name}")
+    except common.ArcRestHelperError as e:
+        print(f"error in function: {e[0]['function']}")
+        print(f"error on line: {e[0]['line']}")
+        print(f"error in file name: {e[0]['filename']}")
+        print(f"with error message: {e[0]['synerror']}")
         if 'arcpyError' in e[0]:
-            print ("with arcpy message: %s" % e[0]['arcpyError'])
+            print(f"with arcpy message: {e[0]['arcpyError']}")
 
     except:
         line, filename, synerror = trace()
-        print ("error on line: %s" % line)
-        print ("error in file name: %s" % filename)
-        print ("with error message: %s" % synerror)
+        print(f"error on line: {line}")
+        print(f"error in file name: {filename}")
+        print(f"with error message: {synerror}")
 if __name__ == "__main__":
     main()

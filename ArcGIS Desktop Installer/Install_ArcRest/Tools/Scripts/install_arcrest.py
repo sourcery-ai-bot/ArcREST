@@ -147,13 +147,10 @@ def installPackages(arcrest_zip, arcresthelper_zip, site_package):
                         break;
     except:
         arcpy.AddError(str(trace()))
-        print (str(trace()))
+        print(trace())
     arcpy.AddMessage("The modules has been loaded to {0} ...".format(site_package))
 
 def main():
-    arcrestZip = 'arcrest.zip'
-    arcrestHelperZip = 'arcresthelper.zip'
-
     get_latest = arcpy.GetParameter(0)
     installInBoth = arcpy.GetParameter(1)
     base_folder = os.path.dirname(__file__)
@@ -168,6 +165,9 @@ def main():
         arcrest_zip, arcresthelper_zip = download_arcrest()
     else:
         commondata = os.path.join(base_folder, "commondata")
+        arcrestZip = 'arcrest.zip'
+        arcrestHelperZip = 'arcresthelper.zip'
+
         if os.path.isdir(os.path.join(commondata, base_file)):
             arcrest_zip = os.path.join(commondata,base_file, arcrestZip)
             arcresthelper_zip = os.path.join(commondata, base_file, arcrestHelperZip)
